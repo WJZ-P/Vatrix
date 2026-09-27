@@ -359,14 +359,19 @@ function mirrorFrame(re, im, phase, scratch) {
   }
 }
 
-function* mirrorSteps(channels, anchor, sliceFrames) {
+function* mirrorSteps(channels, anchor, sliceFrames, cutoffHz) {
   const scratch = new Float64Array(4 * (MIRROR_HIGH + 1));
+  const cut = Math.min(MIRROR_SIZE / 2 + 1, Math.round((cutoffHz * MIRROR_SIZE) / 48000));
   yield* stftSteps(channels, sliceFrames, (re, im, start) => {
     // Carrier phase at this frame's first sample, measured from the anchor.
     const offset = (((start - anchor) % MIRROR_SIZE) + MIRROR_SIZE) % MIRROR_SIZE;
     mirrorFrame(re, im, (2 * Math.PI * ((MIRROR_CENTER * offset) % MIRROR_SIZE)) / MIRROR_SIZE, scratch);
+    re.fill(0, cut, MIRROR_SIZE - cut + 1); im.fill(0, cut, MIRROR_SIZE - cut + 1);
   });
 }
+
+/** veilcast_core::MIRROR_TREBLE_CUT_HZ: restoring drops the output above this, see createMirrorStream. */
+export const MIRROR_TREBLE_CUT_HZ = 9700;
 
 /** In place, planar channels: each frame's packed spectrum goes through `edit(re, im, start)`. */
 function* stftSteps(channels, sliceFrames, edit) {
@@ -414,17 +419,18 @@ function* stftSteps(channels, sliceFrames, edit) {
  * inverse up to window-edge rounding. Bass and treble outside the band pass
  * through. `anchor` is the sample where the carrier phase is zero: the
  * content start, so that both ends agree on it after any container offset.
+ * A restore passes `cutoffHz` (MIRROR_TREBLE_CUT_HZ) to drop the output above it.
  * 48 kHz only. `channels` is an array of Float32Array.
  */
-export function mirrorAudioSpectrum(channels, { anchor = 0 } = {}) {
+export function mirrorAudioSpectrum(channels, { anchor = 0, cutoffHz = Infinity } = {}) {
   if (!Number.isSafeInteger(anchor)) throw new Error("mirror anchor must be an integer");
-  for (const _ of mirrorSteps(channels, anchor, Infinity)) { /* runs to completion */ }
+  for (const _ of mirrorSteps(channels, anchor, Infinity, cutoffHz)) { /* runs to completion */ }
 }
 
 /** mirrorAudioSpectrum that yields to the event loop between slices; rejects with AbortError when `signal` aborts. */
-export async function mirrorAudioSpectrumAsync(channels, { anchor = 0, signal, sliceFrames = 64 } = {}) {
+export async function mirrorAudioSpectrumAsync(channels, { anchor = 0, signal, sliceFrames = 64, cutoffHz = Infinity } = {}) {
   if (!Number.isSafeInteger(anchor)) throw new Error("mirror anchor must be an integer");
-  for (const _ of mirrorSteps(channels, anchor, sliceFrames)) {
+  for (const _ of mirrorSteps(channels, anchor, sliceFrames, cutoffHz)) {
     await new Promise((resolve) => setTimeout(resolve, 0));
     if (signal?.aborted) throw new DOMException("mirror aborted", "AbortError");
   }
@@ -441,14 +447,19 @@ export const MIRROR_STREAM_LATENCY = 8192;
  * where the carrier phase is zero; a wrong anchor only rotates the phase of
  * the whole band, which is close to inaudible. `size` is a multiple of 2048.
  *
+ * It restores, so the output above `cutoffHz` is dropped
+ * (veilcast_core::MIRROR_TREBLE_CUT_HZ): edge leakage and codec noise land
+ * there, heavy bass as a steady 10 kHz tone. `Infinity` keeps everything.
+ *
  * Self-contained on purpose (no outer references): the userscript ships its
  * source text into an AudioWorklet module.
  */
-export function createMirrorStream(channelCount, { size = 8192, anchor = 0 } = {}) {
+export function createMirrorStream(channelCount, { size = 8192, anchor = 0, cutoffHz = 9700 } = {}) {
   const n = size, hop = n / 2;
   const scale = n / 2048;
   if (!Number.isInteger(scale) || scale < 1 || (scale & (scale - 1)) !== 0) throw new Error("mirror stream size must be 2048 times a power of two");
   const low = 7 * scale, high = 427 * scale, center = low + high;
+  const cut = Math.min(n / 2 + 1, Math.round((cutoffHz * n) / 48000));
   const bits = Math.log2(n);
   const reversed = new Uint32Array(n);
   for (let i = 0; i < n; i++) {
@@ -508,6 +519,7 @@ export function createMirrorStream(channelCount, { size = 8192, anchor = 0 } = {
         re[k] = c * nr - s * ni; im[k] = s * nr + c * ni;
         re[n - k] = c * pr + s * pi; im[n - k] = c * pi - s * pr;
       }
+      re.fill(0, cut, n - cut + 1); im.fill(0, cut, n - cut + 1);
       for (let m = 0; m < n; m++) im[m] = -im[m];
       transform();
       const tailA = tails[2 * pair], tailB = tails[2 * pair + 1];

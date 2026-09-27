@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  createMirrorStream, encodeIntroHeader, encodeWav, findAudioGrid, findAudioSync, MIRROR_STREAM_LATENCY, mirrorAudioSpectrum, mirrorAudioSpectrumAsync,
+  createMirrorStream, encodeIntroHeader, encodeWav, findAudioGrid, findAudioSync, MIRROR_STREAM_LATENCY, MIRROR_TREBLE_CUT_HZ,
+  mirrorAudioSpectrum, mirrorAudioSpectrumAsync,
   parseIntroHeader, planGeometry, reverseAudioBlocks, seedFromText, seededPermutation, SYNC_CHIRP_LEAD, syncChirp,
 } from './veilcast.js';
 
@@ -292,7 +293,7 @@ test('the mirror stream has a fixed latency, ignores slicing, resets, and a wron
   mirrorAudioSpectrum(mirrored);
   const upload = mirrored.map((c) => { const out = new Float32Array(length + MIRROR_STREAM_LATENCY); out.set(c); return out; });
   const run = (anchor, slice) => {
-    const stream = createMirrorStream(2, { anchor });
+    const stream = createMirrorStream(2, { anchor, cutoffHz: Infinity });
     assert.equal(stream.latency, MIRROR_STREAM_LATENCY);
     const output = upload.map((c) => new Float32Array(c.length));
     for (let at = 0; at < upload[0].length; at += slice) {
@@ -318,6 +319,34 @@ test('the mirror stream has a fixed latency, ignores slicing, resets, and a wron
   assert.ok(out.subarray(0, MIRROR_STREAM_LATENCY).every((v) => v === 0));
   assert.ok(out.subarray(MIRROR_STREAM_LATENCY).some((v) => v !== 0));
   assert.throws(() => createMirrorStream(2, { size: 3000 }), /2048/);
+});
+
+test('restoring drops the treble where heavy bass leaks back as a steady 10 kHz tone', () => {
+  assert.equal(MIRROR_TREBLE_CUT_HZ, 9700);
+  const rate = 48000, length = rate * 3;
+  // Loud bass just below the band edge, a quiet melody inside the band.
+  const content = Float32Array.from({ length }, (_, i) => 0.5 * Math.sin((2 * Math.PI * 150 * i) / rate) + 0.05 * Math.sin((2 * Math.PI * 1000 * i) / rate));
+  const scrambled = content.slice();
+  mirrorAudioSpectrum([scrambled]); // the desktop side: 16384-point frames
+  const upload = new Float32Array(length + MIRROR_STREAM_LATENCY);
+  upload.set(scrambled);
+  const restore = (cutoffHz) => {
+    const stream = createMirrorStream(1, { cutoffHz }); // the viewer: 8192-point frames
+    const out = new Float32Array(upload.length);
+    for (let at = 0; at < upload.length; at += 128) stream.process([upload.subarray(at, at + 128)], [out.subarray(at, at + 128)]);
+    return out.subarray(MIRROR_STREAM_LATENCY);
+  };
+  // Strongest component between 9.9 and 10.1 kHz, against the 1 kHz melody.
+  const level = (x, hz) => {
+    let re = 0, im = 0;
+    for (let i = rate; i < rate * 2; i++) { re += x[i] * Math.cos((2 * Math.PI * hz * i) / rate); im += x[i] * Math.sin((2 * Math.PI * hz * i) / rate); }
+    return (2 * Math.hypot(re, im)) / rate;
+  };
+  const whine = (x) => Math.max(...Array.from({ length: 21 }, (_, i) => level(x, 9900 + 10 * i)));
+  const uncut = restore(Infinity), cut = restore(MIRROR_TREBLE_CUT_HZ);
+  assert.ok(whine(uncut) > 1e-4, `the leak this guards against, ${whine(uncut)}`);
+  assert.ok(whine(cut) < whine(uncut) / 100, `the cut removes it: ${whine(cut)} vs ${whine(uncut)}`);
+  assert.ok(Math.abs(level(cut, 1000) - 0.05) < 0.005, 'the melody is untouched');
 });
 
 test('the sync chirp matches veilcast_core and pins the content start through an offset', () => {
