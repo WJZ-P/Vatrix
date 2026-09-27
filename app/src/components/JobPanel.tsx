@@ -2,7 +2,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { styled } from "@linaria/react";
 
-import type { JobResult, Mode, Progress } from "../ipc";
+import { type JobResult, type Mode, type Progress, describeAudio } from "../ipc";
 import { Button, Field, Note, Panel, Row } from "./ui";
 
 const Bar = styled.div<{ ratio: number }>`
@@ -84,7 +84,7 @@ export function JobPanel({ outputDir, onOutputDir, canRun, job, onRun }: Props) 
             输出：{job.result.output}
             {job.mode === "scramble" && `（${job.result.upload_width} × ${job.result.upload_height}）`}
             {` · 编码器 ${job.result.encoder}`}
-            {` · 音频${job.result.audio_ms ? `${job.result.audio_mirror ? "频谱翻转 + " : ""}分块倒放 ${job.result.audio_ms} ms` : "未处理"}`}
+            {` · 音频${describeAudio(job.result)}`}
           </Note>
           <Button type="button" onClick={() => revealItemInDir(job.result!.output)}>
             在文件夹中显示

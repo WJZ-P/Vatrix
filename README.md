@@ -19,10 +19,10 @@
   `viewer/veilcast.js` 的 `encodeIntroHeader` / `parseIntroHeader` 逐位一致。
 - 同一计划复用于多帧，逐帧阶段零堆分配；调用方持有独立的输入、输出缓冲区。
 
-- **音频扰乱**：`reverse_blocks` 按固定时长块内倒放（打乱语序）；`SpectrumMirror` 把 164 Hz–10 kHz 上下颠倒
-  （f → 10171.875 Hz − f，藏住音高和音色，听不出是谁在说话）。两者都是自身的逆，加密时先倒放再翻转，还原时反过来。
-  翻转后的片头那一秒带一段 −40 dBFS 的同步扫频音（`sync_chirp`），浏览器端靠它精确对齐块栅格。
-  `viewer/veilcast.js` 有对应的 JS 实现。
+- **音频扰乱**：`SpectrumMirror` 把 164 Hz–10 kHz 上下颠倒（f → 10171.875 Hz − f，藏住音高和音色，听不出是谁在说话），
+  自身的逆。新文件只做翻转，音轨整体提前 `MIRROR_STREAM_LATENCY`（8192 样本 ≈ 171 ms），浏览器用固定延迟的流式翻转
+  （`viewer/veilcast.js` 的 `createMirrorStream`）在视频自己的声音上实时还原，正好回到与画面同步。
+  旧格式还做过 `reverse_blocks` 块内倒放（0.2.0 起倒放后再翻转，片头带 `sync_chirp` 同步扫频音），仍可还原。
 
 核心库不承担编解码和参数持久化；这些由 `app/` 桌面端和 `userscript/` 浏览器集成负责。
 暂不涉及：密码学密钥派生、并行与 SIMD。
@@ -126,7 +126,8 @@ psnr/ssim 的参考就此被改掉；Matroska 把 1/30 s 舍入到毫秒，按�
 默认 `seed="20040821"`、`tile=40`、`margin=0`；`tail` 作为 `tile` 的兼容别名。
 默认值与 Tauri 共用 `app/src/default-settings.json`，构建脚本内联 `viewer/veilcast.js`，不加载远程依赖。
 读到片头二维码后按 BVID 记住该视频的参数，下次打开（哪怕从中途开始）直接还原；把进度条拖回片头会重新扫码。
-桌面端开了音频加扰时，脚本会下载这个视频的音轨、对齐块栅格、把频谱翻回来再倒回来，并与画面同步播放。
+桌面端开了音频加扰时，脚本把视频自己的声音接入 AudioWorklet 实时翻回来，B 站的音量、静音、暂停、跳转照常可用；
+旧格式（分块倒放）的视频则下载音轨、对齐块栅格、还原后与画面同步播放。
 
 安装、参数、限制和测试步骤见 [userscript/README.md](userscript/README.md)。
 

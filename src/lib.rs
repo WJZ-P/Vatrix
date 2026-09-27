@@ -33,5 +33,5 @@ pub use header::{HEADER_VERSION, HeaderError, IntroHeader};
 pub use invert::invert_yuv420_limited;
 pub use permutation::{seed_from_text, seeded_permutation};
 pub use shuffle::ShufflePlan;
-pub use spectrum::{MIRROR_SAMPLE_RATE, SpectrumMirror};
+pub use spectrum::{MIRROR_SAMPLE_RATE, MIRROR_STREAM_LATENCY, SpectrumMirror};
 pub use yuv::{Yuv420Layout, Yuv420Plan};

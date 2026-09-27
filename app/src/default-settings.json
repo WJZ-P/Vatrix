@@ -10,7 +10,6 @@
   "seedInIntro": false,
   "gpu": true,
   "audio": false,
-  "audioMs": 250,
-  "audioMirror": true,
+  "audioMs": 0,
   "autoIntro": true
 }

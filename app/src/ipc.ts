@@ -69,9 +69,9 @@ export interface JobParams extends PlanParams {
   seedInIntro: boolean;
   /** Encode with the machine's hardware encoder if one works; otherwise libx264. */
   gpu: boolean;
-  /** Reverse time inside audio blocks of this many ms; 0 leaves the audio alone. Self-inverse. */
+  /** Reverse time inside audio blocks of this many ms (older files only); 0 = no reversal. Self-inverse. */
   audioMs: number;
-  /** With audioMs: also mirror the 164 Hz–10 kHz spectrum so voices are unrecognisable. Self-inverse. */
+  /** Mirror the 164 Hz–10 kHz spectrum so voices are unrecognisable. Self-inverse. */
   audioMirror: boolean;
 }
 
@@ -93,6 +93,12 @@ export interface JobResult {
   audio_ms: number;
   /** Whether the spectrum mirror ran as well. */
   audio_mirror: boolean;
+}
+
+/** "频谱翻转", "分块倒放 250 ms", both joined, or "未处理". */
+export function describeAudio(result: Pick<JobResult, "audio_ms" | "audio_mirror">): string {
+  const parts = [result.audio_mirror && "频谱翻转", result.audio_ms > 0 && `分块倒放 ${result.audio_ms} ms`].filter(Boolean);
+  return parts.length ? parts.join(" + ") : "未处理";
 }
 
 /** The hardware encoder `gpu` jobs will use on this machine. */

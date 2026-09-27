@@ -5,6 +5,11 @@ use crate::audio::AudioError;
 /// The only sample rate the mirror geometry is defined for.
 pub const MIRROR_SAMPLE_RATE: u32 = 48_000;
 
+/// How many samples early a mirror-only track is shifted: the fixed latency
+/// of the viewer's real-time mirror (`createMirrorStream` with 8192-point
+/// frames), so that its output lands back in sync with the picture.
+pub const MIRROR_STREAM_LATENCY: usize = 8_192;
+
 // A 16384-point STFT (2.93 Hz bins at 48 kHz) with sqrt-Hann windows at half
 // overlap. Bins LOW..=HIGH (164 Hz–10 kHz) swap with CENTER - k. Long frames
 // keep the band edges sharp; with 2048 points the edges leak enough to cost

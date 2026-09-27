@@ -13,11 +13,13 @@ export interface PlanSettings {
   intro: boolean;
   seedInIntro: boolean;
   gpu: boolean;
-  /** Reverse time inside audio blocks; `audioMs` is the block length. */
+  /** Mirror the audio spectrum, which hides whose voice it is; viewers undo it in real time. */
   audio: boolean;
+  /**
+   * Block reversal of an older file, taken from its tag or intro and only
+   * used to restore it; new files are never reversed. 0 otherwise.
+   */
   audioMs: number;
-  /** With `audio`: also mirror the spectrum, which hides whose voice it is. */
-  audioMirror: boolean;
 }
 
 interface Props {
@@ -134,39 +136,15 @@ export function PlanPanel({ settings, onChange, sizeFromFile }: Props) {
         <input
           type="checkbox"
           checked={settings.audio}
-          onChange={(e) =>
-            onChange({
-              ...settings,
-              audio: e.currentTarget.checked,
-              // Settings saved by the earlier "0 = off" field hold 0 here.
-              audioMs: settings.audioMs > 0 ? settings.audioMs : 250,
-            })
-          }
+          onChange={(e) => onChange({ ...settings, audio: e.currentTarget.checked })}
         />
-        音频加扰（分块倒放，解密时自动还原）
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, opacity: settings.audio ? 1 : 0.5 }}>
-          块长
-          <input
-            type="number"
-            min={50}
-            step={50}
-            value={settings.audioMs}
-            disabled={!settings.audio}
-            onChange={(e) => onChange({ ...settings, audioMs: Number(e.currentTarget.value) })}
-            style={{ width: 72 }}
-          />
-          ms
-        </span>
+        音频加扰：频谱翻转（164 Hz–10 kHz 上下颠倒，听不出音色和性别；脚本实时还原）
       </label>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, paddingLeft: 24, opacity: settings.audio ? 1 : 0.5 }}>
-        <input
-          type="checkbox"
-          checked={settings.audioMirror}
-          disabled={!settings.audio}
-          onChange={(e) => onChange({ ...settings, audioMirror: e.currentTarget.checked })}
-        />
-        频谱翻转（164 Hz–10 kHz 上下颠倒，听不出音色和性别；倒放只能打乱语序）
-      </label>
+      {settings.audioMs > 0 && (
+        <Note>
+          旧版文件：音频还做了 {settings.audioMs} ms 分块倒放{settings.audio ? "和频谱翻转" : ""}，解密时一并还原。
+        </Note>
+      )}
       <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <input
           type="checkbox"

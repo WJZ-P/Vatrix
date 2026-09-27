@@ -6,7 +6,7 @@ import { JobPanel, type JobState } from "./components/JobPanel";
 import { PlanPanel, type PlanSettings } from "./components/PlanPanel";
 import { type Snapshot, Snapshots } from "./components/Snapshots";
 import { Note } from "./components/ui";
-import { type Mode, type VideoInfo, initialFile, probeVideo, runJob, snapshotUrl } from "./ipc";
+import { type Mode, type VideoInfo, describeAudio, initialFile, probeVideo, runJob, snapshotUrl } from "./ipc";
 import defaultSettings from "./default-settings.json";
 
 const Shell = styled.main`
@@ -45,7 +45,8 @@ const DEFAULT_SETTINGS: PlanSettings & { outputDir: string } = defaultSettings;
 function loadSettings(): typeof DEFAULT_SETTINGS {
   try {
     const stored = localStorage.getItem(SETTINGS_KEY);
-    return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
+    // audioMs describes the loaded file, never a preference; older versions saved one.
+    return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored), audioMs: 0 } : DEFAULT_SETTINGS;
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -97,12 +98,11 @@ function App() {
                 margin: hint.margin,
                 invert: hint.invert ?? false,
                 intro: hint.intro_ms > 0,
-                // null: only the QR code was readable, which cannot say; keep the user's value.
-                audio: hint.audio_ms > 0,
-                ...(hint.audio_ms > 0 ? { audioMs: hint.audio_ms, audioMirror: hint.audio_mirror } : {}),
+                audio: hint.audio_mirror,
+                audioMs: hint.audio_ms,
                 ...(hint.seed ? { seed: hint.seed } : {}),
               }
-            : {}),
+            : { audioMs: 0 }),
         }));
         setSizeFromFile(true);
         const url = await snapshotUrl(path, probed.duration / 2);
@@ -138,8 +138,9 @@ function App() {
           intro: settings.intro,
           seedInIntro: settings.intro && settings.seedInIntro,
           gpu: settings.gpu,
-          audioMs: settings.audio && settings.audioMs > 0 ? settings.audioMs : 0,
-          audioMirror: settings.audio && settings.audioMirror,
+          // New files are mirrored only; an older file's reversal is undone on restore.
+          audioMs: mode === "restore" ? settings.audioMs : 0,
+          audioMirror: settings.audio,
         },
         (progress) => setJob((current) => ({ ...current, progress })),
       );
@@ -148,7 +149,7 @@ function App() {
       const url = await snapshotUrl(result.output, seconds);
       showSnapshots([
         ...snapshots.slice(0, 1),
-        { url, caption: `${mode === "scramble" ? "加密输出" : "解密输出"} tile ${settings.tile} margin ${settings.margin} · 反色${settings.invert ? "开" : "关"} · 音频${result.audio_ms ? `${result.audio_mirror ? "翻转 + " : ""}倒放 ${result.audio_ms} ms` : "未处理"}` },
+        { url, caption: `${mode === "scramble" ? "加密输出" : "解密输出"} tile ${settings.tile} margin ${settings.margin} · 反色${settings.invert ? "开" : "关"} · 音频${describeAudio(result)}` },
       ]);
     } catch (reason) {
       setJob((current) => ({ ...current, running: false, error: String(reason) }));

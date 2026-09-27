@@ -28,8 +28,10 @@ pub const HEADER_VERSION: u8 = 1;
 /// from the source size and tile. Historical version-1 codes were 18/38 digits
 /// without the audio field; readers accept those as audio_ms=0. Encoding always
 /// uses the current 22/42-digit layout. Future layout changes must bump the version.
-/// The audio mirror bit is only valid together with a non-zero audio block
-/// length; readers from before it existed reject such codes as a bad flags field.
+/// The audio mirror bit with a zero block length means mirror only, the track
+/// shifted [`crate::MIRROR_STREAM_LATENCY`] samples early for real-time
+/// restoring; with a block length it is the older mirror-after-reversal track.
+/// Readers from before the bit existed reject it as a bad flags field.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IntroHeader {
     pub width: usize,
@@ -40,7 +42,8 @@ pub struct IntroHeader {
     /// Block length of the audio time reversal, see [`crate::reverse_blocks`];
     /// 0 when the audio was left alone.
     pub audio_ms: u32,
-    /// The reversed audio was spectrum-mirrored as well, see [`crate::SpectrumMirror`].
+    /// The audio was spectrum-mirrored, see [`crate::SpectrumMirror`]: on its
+    /// own when `audio_ms` is 0, otherwise after the block reversal.
     pub audio_mirror: bool,
     pub seed: Option<u64>,
 }
@@ -113,7 +116,8 @@ impl IntroHeader {
             return Err(HeaderError::Checksum);
         }
         let flags = field::<u8>(&text[15..16], "flags")?;
-        if flags > 3 {
+        // Historical layouts predate the audio mirror bit.
+        if flags > 3 || (legacy && flags > 1) {
             return Err(HeaderError::Field("flags"));
         }
         let seed = if text.len() == 38 || text.len() == WITH_SEED {
@@ -155,9 +159,6 @@ impl IntroHeader {
         }
         if self.audio_ms > 9999 {
             return Err(HeaderError::Field("audio"));
-        }
-        if self.audio_mirror && self.audio_ms == 0 {
-            return Err(HeaderError::Field("flags"));
         }
         Ok(())
     }

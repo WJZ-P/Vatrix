@@ -10,9 +10,9 @@ use std::thread;
 
 use serde::{Deserialize, Serialize};
 use veilcast_core::{
-    IntroHeader, MIRROR_SAMPLE_RATE, SYNC_CHIRP_LEAD, SpectrumMirror, Yuv420Layout, Yuv420Plan,
-    block_frames, invert_yuv420_limited, reverse_blocks, seed_from_text, seeded_permutation,
-    sync_chirp,
+    IntroHeader, MIRROR_SAMPLE_RATE, MIRROR_STREAM_LATENCY, SYNC_CHIRP_LEAD, SpectrumMirror,
+    Yuv420Layout, Yuv420Plan, block_frames, invert_yuv420_limited, reverse_blocks, seed_from_text,
+    seeded_permutation, sync_chirp,
 };
 
 use crate::intro;
@@ -517,8 +517,9 @@ pub struct JobParams {
     /// The same value scrambles and restores, see [`scramble_audio`].
     #[serde(default)]
     pub audio_ms: u32,
-    /// With `audio_ms`: also mirror the audio spectrum, see [`SpectrumMirror`].
-    /// Omitted by older clients, and absent from older files: reversal only.
+    /// Mirror the audio spectrum, see [`SpectrumMirror`]: alone (restorable in
+    /// real time) when `audio_ms` is 0, after the reversal otherwise.
+    /// Omitted by older clients, and absent from older files: no mirror.
     #[serde(default)]
     pub audio_mirror: bool,
     /// Encode with the machine's hardware encoder (see [`hardware_encoder`]);
@@ -597,6 +598,12 @@ impl Drop for TempFile {
 /// search, so a mirrored intro second carries [`sync_chirp`] instead of pure
 /// silence. The mirror step is not lossless: it rounds back to 16 bits and
 /// clips anything it pushes past full scale.
+///
+/// `block_ms` 0 with `mirror` is mirror only, which a viewer undoes in real
+/// time on the video's own sound. The scrambled track runs
+/// [`MIRROR_STREAM_LATENCY`] samples early so the viewer's fixed latency puts
+/// it back in sync; the track keeps its length (zeros at the end), and
+/// restoring shifts it back.
 pub fn scramble_audio(
     tools: &Tools,
     input: &str,
@@ -607,12 +614,14 @@ pub fn scramble_audio(
     intro_seconds: Option<f64>,
 ) -> Result<TempFile, String> {
     let block = block_frames(block_ms, AUDIO_RATE);
-    if block == 0 {
+    if block == 0 && (block_ms > 0 || !mirror) {
         return Err(format!("音频分块长度 {block_ms} ms 太短"));
     }
     if channels == 0 {
         return Err("音频流没有声道".into());
     }
+    let mirror_only = block == 0;
+    let lead = MIRROR_STREAM_LATENCY;
     let frame_bytes = channels * AUDIO_SAMPLE_BYTES;
     let target = TempFile::new("flac")?;
     let rate = AUDIO_RATE.to_string();
@@ -621,10 +630,13 @@ pub fn scramble_audio(
     let mut decoder = command(&tools.ffmpeg);
     decoder.args(["-v", "error", "-nostats", "-i", input, "-vn"]);
     if let (Some(seconds), Mode::Restore) = (intro_seconds, mode) {
-        decoder.args([
-            "-af",
-            &format!("atrim=start={seconds},asetpts=PTS-STARTPTS"),
-        ]);
+        // A mirror-only track starts `lead` samples before the intro ends.
+        let start = if mirror_only {
+            seconds - lead as f64 / f64::from(AUDIO_RATE)
+        } else {
+            seconds
+        };
+        decoder.args(["-af", &format!("atrim=start={start},asetpts=PTS-STARTPTS")]);
     }
     decoder
         .args(["-f", "s16le", "-ar", &rate, "-ac", &channels_text, "-"])
@@ -669,12 +681,42 @@ pub fn scramble_audio(
     let decoder_errors = drain_stderr(decoder.stderr.take());
     let encoder_errors = drain_stderr(encoder.stderr.take());
     let mut pcm_in = decoder.stdout.take().ok_or("音频解码器没有输出管道")?;
-    let mut pcm_out = encoder.stdin.take().ok_or("音频编码器没有输入管道")?;
+    let pcm_out = encoder.stdin.take().ok_or("音频编码器没有输入管道")?;
+    let intro_frames = intro_seconds.map(|s| (s * f64::from(AUDIO_RATE)).round() as usize);
+    let mut sink = PcmSink {
+        out: pcm_out,
+        // Mirror only without an intro: nothing to shift into, drop the lead.
+        skip: if mirror_only && mode == Mode::Scramble && intro_frames.is_none() {
+            lead * frame_bytes
+        } else {
+            0
+        },
+        // Mirror only, restoring: the zeros the scramble appended.
+        holdback: if mirror_only && mode == Mode::Restore {
+            lead * frame_bytes
+        } else {
+            0
+        },
+        held: Vec::new(),
+    };
 
     // One block per read, so a whole block is always in hand; the short final
     // read is left unreversed by `reverse_blocks`.
     let block_bytes = block * frame_bytes;
-    let mut buffer = vec![0u8; block_bytes];
+    let mut buffer = vec![
+        0u8;
+        if mirror_only {
+            4_800 * frame_bytes
+        } else {
+            block_bytes
+        }
+    ];
+    let reverse = |pcm: &mut [u8]| -> Result<(), String> {
+        if block > 0 {
+            reverse_blocks(pcm, frame_bytes, block).map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    };
     let mut mirror = if mirror {
         Some(SpectrumMirror::new(channels).map_err(|e| e.to_string())?)
     } else {
@@ -685,8 +727,22 @@ pub fn scramble_audio(
     // whole blocks can be reversed.
     let mut queued = Vec::new();
     let pump = (|| -> Result<(), String> {
-        if let (Some(seconds), Mode::Scramble, Some(_)) = (intro_seconds, mode, &mirror) {
-            write_pcm(&mut pcm_out, &sync_intro(seconds, channels))?;
+        if let (Some(frames), Mode::Scramble, Some(_)) = (intro_frames, mode, &mirror) {
+            if mirror_only {
+                sink.write(&vec![0; frames.saturating_sub(lead) * frame_bytes])?;
+            } else {
+                sink.write(&sync_intro(frames, channels))?;
+            }
+        }
+        if let (None, Mode::Restore, Some(mirror), true) =
+            (intro_frames, mode, mirror.as_mut(), mirror_only)
+        {
+            // The content's first `lead` samples were dropped; realign with silence.
+            mirrored.clear();
+            mirror
+                .process(&vec![0.0; lead * channels], &mut mirrored)
+                .map_err(|e| e.to_string())?;
+            sink.write(&f32_to_pcm(&mirrored).collect::<Vec<_>>())?;
         }
         loop {
             let filled =
@@ -697,12 +753,12 @@ pub fn scramble_audio(
             let whole = filled - filled % frame_bytes;
             let chunk = &mut buffer[..whole];
             let Some(mirror) = mirror.as_mut() else {
-                reverse_blocks(chunk, frame_bytes, block).map_err(|e| e.to_string())?;
-                write_pcm(&mut pcm_out, chunk)?;
+                reverse(chunk)?;
+                sink.write(chunk)?;
                 continue;
             };
             if mode == Mode::Scramble {
-                reverse_blocks(chunk, frame_bytes, block).map_err(|e| e.to_string())?;
+                reverse(chunk)?;
             }
             pcm_to_f32(chunk, &mut samples);
             mirrored.clear();
@@ -710,14 +766,13 @@ pub fn scramble_audio(
                 .process(&samples, &mut mirrored)
                 .map_err(|e| e.to_string())?;
             queued.extend(f32_to_pcm(&mirrored));
-            if mode == Mode::Restore {
+            if mode == Mode::Restore && block > 0 {
                 let whole = queued.len() - queued.len() % block_bytes;
-                reverse_blocks(&mut queued[..whole], frame_bytes, block)
-                    .map_err(|e| e.to_string())?;
-                write_pcm(&mut pcm_out, &queued[..whole])?;
+                reverse(&mut queued[..whole])?;
+                sink.write(&queued[..whole])?;
                 queued.drain(..whole);
             } else {
-                write_pcm(&mut pcm_out, &queued)?;
+                sink.write(&queued)?;
                 queued.clear();
             }
         }
@@ -727,13 +782,16 @@ pub fn scramble_audio(
             queued.extend(f32_to_pcm(&mirrored));
             if mode == Mode::Restore {
                 // Whole blocks reversed, a trailing partial block as is.
-                reverse_blocks(&mut queued, frame_bytes, block).map_err(|e| e.to_string())?;
+                reverse(&mut queued)?;
             }
-            write_pcm(&mut pcm_out, &queued)?;
+            sink.write(&queued)?;
+            if mirror_only && mode == Mode::Scramble {
+                sink.write(&vec![0; lead * frame_bytes])?;
+            }
         }
         Ok(())
     })();
-    drop(pcm_out);
+    drop(sink);
     let decoder_status = wait(&mut decoder);
     let encoder_status = wait(&mut encoder);
     let decoder_errors = decoder_errors.join().unwrap_or_default();
@@ -759,10 +817,34 @@ pub fn scramble_audio(
     Ok(target)
 }
 
-/// The intro second of a mirrored track: silence with [`sync_chirp`] ending
-/// [`SYNC_CHIRP_LEAD`] samples before the content, on every channel.
-fn sync_intro(seconds: f64, channels: usize) -> Vec<u8> {
-    let frames = (seconds * f64::from(AUDIO_RATE)).round() as usize;
+/// Audio pass output: drops the first `skip` bytes and never writes the last
+/// `holdback` bytes it is given.
+struct PcmSink<W: Write> {
+    out: W,
+    skip: usize,
+    holdback: usize,
+    held: Vec<u8>,
+}
+
+impl<W: Write> PcmSink<W> {
+    fn write(&mut self, bytes: &[u8]) -> Result<(), String> {
+        let skipped = self.skip.min(bytes.len());
+        self.skip -= skipped;
+        let bytes = &bytes[skipped..];
+        if self.holdback == 0 {
+            return write_pcm(&mut self.out, bytes);
+        }
+        self.held.extend_from_slice(bytes);
+        let ready = self.held.len().saturating_sub(self.holdback);
+        write_pcm(&mut self.out, &self.held[..ready])?;
+        self.held.drain(..ready);
+        Ok(())
+    }
+}
+
+/// The intro second of a mirrored-and-reversed track: silence with
+/// [`sync_chirp`] ending [`SYNC_CHIRP_LEAD`] samples before the content, on every channel.
+fn sync_intro(frames: usize, channels: usize) -> Vec<u8> {
     let mut intro = vec![0.0f32; frames * channels];
     let chirp = sync_chirp();
     let at = frames.saturating_sub(SYNC_CHIRP_LEAD);
@@ -832,7 +914,7 @@ pub fn run_job(
     } else {
         0
     };
-    let audio_mirror = audio_ms > 0 && params.audio_mirror;
+    let audio_mirror = info.has_audio && params.audio_mirror;
     let intro_frame = if params.intro && params.mode == Mode::Scramble {
         let header = IntroHeader {
             width: params.width,
@@ -851,7 +933,7 @@ pub fn run_job(
 
     // Audio runs in its own pass and reaches the encoder as a temporary
     // lossless file, so the video pipe below stays exactly as it was.
-    let audio_temp = if audio_ms > 0 {
+    let audio_temp = if audio_ms > 0 || audio_mirror {
         Some(scramble_audio(
             tools,
             &params.input,

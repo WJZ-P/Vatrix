@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use veilcast_app_lib::ffmpeg::{JobParams, Mode, Tools, probe, run_job, scramble_audio};
+use veilcast_core::MIRROR_STREAM_LATENCY;
 
 const SAMPLE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -134,10 +135,93 @@ fn the_audio_pass_restores_every_sample() {
     assert!(!path.exists());
 }
 
-/// Mirror and reversal together: the intro second stays silent, the length
-/// is kept, the upload is unlike the source, and restoring undoes both.
+/// Mirror only: the track runs `MIRROR_STREAM_LATENCY` samples early (for the
+/// viewer's real-time mirror), keeps its length, is unlike the source, and
+/// restoring shifts it back and undoes the mirror.
 #[test]
-fn the_mirrored_audio_pass_round_trips() {
+fn the_mirror_only_pass_runs_early_and_round_trips() {
+    let Ok(tools) = Tools::locate() else {
+        eprintln!("skipped: ffmpeg not found");
+        return;
+    };
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("audio-mirror-only-pass");
+    std::fs::create_dir_all(&dir).unwrap();
+    let source = dir.join("source.wav");
+    let status = Command::new(ffmpeg())
+        .args(["-v", "error", "-y", "-f", "lavfi", "-i"])
+        .arg("aevalsrc=0.2*sin(2*PI*220*t)+0.1*sin(2*PI*440*t)|0.1*sin(2*PI*1500*t):s=48000:d=3.2")
+        .args(["-c:a", "pcm_s16le"])
+        .arg(&source)
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let original = pcm(&source);
+    let lead = MIRROR_STREAM_LATENCY;
+
+    for intro in [Some(1.0), None] {
+        let scrambled = scramble_audio(
+            &tools,
+            &source.to_string_lossy(),
+            Mode::Scramble,
+            0,
+            true,
+            2,
+            intro,
+        )
+        .unwrap();
+        let scrambled_pcm = pcm(scrambled.path());
+        let intro_samples = if intro.is_some() { 48_000 * 2 } else { 0 };
+        assert_eq!(scrambled_pcm.len(), original.len() + intro_samples);
+        if intro.is_some() {
+            let silent = (48_000 - lead) * 2;
+            assert!(scrambled_pcm[..silent].iter().all(|&s| s == 0));
+            assert!(
+                scrambled_pcm[silent..silent + 2_000]
+                    .iter()
+                    .any(|&s| s != 0)
+            );
+        }
+        assert!(
+            scrambled_pcm[scrambled_pcm.len() - lead * 2..]
+                .iter()
+                .all(|&s| s == 0)
+        );
+        let exposed = snr_db(
+            &original,
+            &scrambled_pcm[intro_samples.saturating_sub(lead * 2)..],
+        );
+        assert!(
+            exposed < 1.0,
+            "the upload must not resemble the source: {exposed:.1} dB"
+        );
+
+        let restored = scramble_audio(
+            &tools,
+            &scrambled.path().to_string_lossy(),
+            Mode::Restore,
+            0,
+            true,
+            2,
+            intro,
+        )
+        .unwrap();
+        let restored_pcm = pcm(restored.path());
+        assert_eq!(restored_pcm.len(), original.len());
+        // Without an intro the first `lead` samples had nowhere to go.
+        let from = if intro.is_some() { 0 } else { lead * 2 };
+        let snr = snr_db(&original[from..], &restored_pcm[from..]);
+        eprintln!(
+            "mirror-only pass (intro {intro:?}): upload {exposed:.1} dB, round trip {snr:.1} dB"
+        );
+        assert!(snr > 30.0, "round trip {snr:.1} dB");
+    }
+}
+
+/// Mirror and reversal together (the 0.2.0 format): the intro second holds
+/// the sync chirp, the length is kept, the upload is unlike the source, and
+/// restoring undoes both.
+#[test]
+fn the_mirrored_and_reversed_audio_pass_round_trips() {
     let Ok(tools) = Tools::locate() else {
         eprintln!("skipped: ffmpeg not found");
         return;
@@ -265,13 +349,54 @@ fn reversed_audio_survives_the_full_job() {
 
     let original = pcm(Path::new(SAMPLE));
     let (_, plain) = job("plain", 0, false);
-    let (scrambled, restored) = job("mirrored", 250, true);
+    let (scrambled, restored) = job("mirrored", 0, true);
+    let (legacy, _) = job("legacy", 250, true);
 
     // What survives an upload: no metadata, audio re-encoded by the platform.
-    // The intro QR alone must still say how the audio was scrambled. The two files
-    // are also the fixtures for userscript/tests/audio.html: B站 serves audio
-    // as a separate fragmented .m4s, which browsers decode without trimming
-    // the AAC priming samples.
+    // The intro QR alone must still say how the audio was scrambled. The files
+    // are also the fixtures for userscript/tests/audio.html (mirror only) and
+    // audio-legacy.html (0.2.0 format): B站 serves audio as a separate
+    // fragmented .m4s, which browsers decode without trimming the AAC priming samples.
+    for (scrambled, audio_ms) in [(&scrambled, 0), (&legacy, 250)] {
+        platform_copies(scrambled);
+        let dir = scrambled.parent().unwrap();
+        let uploaded = probe(&tools, &dir.join("platform.mp4").to_string_lossy()).unwrap();
+        let hint = uploaded.hint.expect("the intro QR survives the upload");
+        assert_eq!(
+            hint.audio_ms, audio_ms,
+            "the intro QR carries the block length"
+        );
+        assert!(hint.audio_mirror, "the intro QR carries the mirror flag");
+    }
+
+    let restored_info = probe(&tools, &restored.to_string_lossy()).unwrap();
+    assert_eq!(restored_info.audio_channels, 2);
+    assert!((restored_info.duration - info.duration).abs() < 0.1);
+
+    let baseline = snr_db(&original, &pcm(&plain));
+    let mirrored = snr_db(&original, &pcm(&restored));
+    // The upload, from where its (early) content starts, against the source it hides.
+    let exposed = snr_db(
+        &original,
+        &pcm(&scrambled)[(48_000 - MIRROR_STREAM_LATENCY) * 2..],
+    );
+    eprintln!(
+        "SNR vs source: plain re-encode {baseline:.1} dB, mirror-only round trip {mirrored:.1} dB, upload {exposed:.1} dB"
+    );
+    assert!(baseline > 15.0, "plain re-encode baseline {baseline:.1} dB");
+    assert!(
+        mirrored > baseline - 3.0,
+        "scrambling must cost at most 3 dB over a plain re-encode: {mirrored:.1} vs {baseline:.1} dB"
+    );
+    assert!(
+        exposed < 3.0,
+        "the upload must not resemble the source: {exposed:.1} dB"
+    );
+}
+
+/// `platform.mp4` (metadata stripped, audio re-encoded at 64 kbit/s) and a
+/// B站-style audio-only fragmented `platform.m4s` next to `scrambled`.
+fn platform_copies(scrambled: &Path) {
     let dir = scrambled.parent().unwrap();
     for (name, args) in [
         (
@@ -308,36 +433,11 @@ fn reversed_audio_survives_the_full_job() {
     ] {
         let status = Command::new(ffmpeg())
             .args(["-v", "error", "-y", "-i"])
-            .arg(&scrambled)
+            .arg(scrambled)
             .args(args)
             .arg(dir.join(name))
             .status()
             .unwrap();
         assert!(status.success(), "{name}");
     }
-    let uploaded = probe(&tools, &dir.join("platform.mp4").to_string_lossy()).unwrap();
-    let hint = uploaded.hint.expect("the intro QR survives the upload");
-    assert_eq!(hint.audio_ms, 250, "the intro QR carries the block length");
-    assert!(hint.audio_mirror, "the intro QR carries the mirror flag");
-
-    let restored_info = probe(&tools, &restored.to_string_lossy()).unwrap();
-    assert_eq!(restored_info.audio_channels, 2);
-    assert!((restored_info.duration - info.duration).abs() < 0.1);
-
-    let baseline = snr_db(&original, &pcm(&plain));
-    let reversed = snr_db(&original, &pcm(&restored));
-    // The upload, intro second skipped, against the source it hides.
-    let exposed = snr_db(&original, &pcm(&scrambled)[48_000 * 2..]);
-    eprintln!(
-        "SNR vs source: plain re-encode {baseline:.1} dB, mirrored + reversed round trip {reversed:.1} dB, upload {exposed:.1} dB"
-    );
-    assert!(baseline > 15.0, "plain re-encode baseline {baseline:.1} dB");
-    assert!(
-        reversed > baseline - 3.0,
-        "scrambling must cost at most 3 dB over a plain re-encode: {reversed:.1} vs {baseline:.1} dB"
-    );
-    assert!(
-        exposed < 3.0,
-        "the upload must not resemble the source: {exposed:.1} dB"
-    );
 }

@@ -40,6 +40,17 @@ fn known_answer_vectors_pin_the_layout() {
         .unwrap(),
         "012560137004000102500985959262365026294691"
     );
+    // Mirror only: flags 2 with no block length.
+    let mirror_only = IntroHeader {
+        invert: false,
+        audio_mirror: true,
+        ..sample()
+    };
+    assert_eq!(mirror_only.encode().unwrap(), "0125601370040002000026");
+    assert_eq!(
+        IntroHeader::parse("0125601370040002000026").unwrap(),
+        mirror_only
+    );
     let mirrored = IntroHeader {
         audio_mirror: true,
         ..with_audio
@@ -136,12 +147,7 @@ fn rejects_malformed_strings() {
         IntroHeader::parse("0225601370040001000009").unwrap_err(),
         HeaderError::Version(2)
     );
-    // Flags 2 (audio mirror) without audio, and flags 4 (reserved bit) —
-    // checksums recomputed for the altered payloads.
-    assert_eq!(
-        IntroHeader::parse("0125601370040002000026").unwrap_err(),
-        HeaderError::Field("flags")
-    );
+    // Flags 4 (reserved bit) — checksum recomputed for the altered payload.
     assert_eq!(
         IntroHeader::parse("0125601370040004025003").unwrap_err(),
         HeaderError::Field("flags")
@@ -243,13 +249,6 @@ fn rejects_out_of_range_fields_before_encoding() {
                 ..sample()
             },
             "margin",
-        ),
-        (
-            IntroHeader {
-                audio_mirror: true,
-                ..sample()
-            },
-            "flags",
         ),
     ] {
         assert_eq!(header.encode().unwrap_err(), HeaderError::Field(name));
