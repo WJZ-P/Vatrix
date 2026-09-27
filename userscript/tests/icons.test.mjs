@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
@@ -13,12 +14,13 @@ function pngSize(bytes) {
   return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
 }
 
-test('the icon master preserves the selected v2 artwork unchanged', async () => {
+test('the icon master is the selected v3 artwork, only its tile made fully opaque', async () => {
+  const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+  // Replacing the artwork means updating both hashes (see assets/branding/README.md).
+  assert.equal(sha256(await read('assets/branding/veilcast-icon-v3-source.png')), 'e5ca2d46c9703d73c16df98db34e9d53f7147c7440fff6d7174df4e160844f07');
   const master = await read('assets/branding/veilcast-icon.png');
-  assert.deepEqual(master, await read('assets/branding/veilcast-icon-concept-v2.png'));
-  const [width, height] = pngSize(master);
-  assert.equal(width, height);
-  assert.ok(width >= 512);
+  assert.equal(sha256(master), 'a18b962a473ab2a1956381c4edbe81aa81404df0e544890565e46c4e2eae7cf9');
+  assert.deepEqual(pngSize(master), [1024, 1024]);
 });
 
 test('desktop PNG variants have the expected sizes and alpha channel', async () => {

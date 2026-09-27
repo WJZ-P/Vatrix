@@ -1,9 +1,13 @@
 # VeilCast 图标：分片 V
 
-## 当前正式图标
+## 当前正式图标：v3
 
-- 用户选定 v2（下方的清理版）：左侧切块、右侧连续渐变、较亮的蓝色背景。
-- 母版：`veilcast-icon.png`，与 `veilcast-icon-concept-v2.png` 逐字节一致；保留两版候选和原始提示词，不重绘选定图稿。
+- 用户提供的 v3：左侧斜切的方格、右侧连续的青蓝条带，深蓝圆角底。
+- 原图：`veilcast-icon-v3-source.png`（1024×1024 RGBA，圆角外已透明），原样保留。
+- 母版：`veilcast-icon.png`，由 `node scripts/prepare-icon-master.mjs` 从原图生成：原图方块内部的 alpha 只有 250–253
+  （导出噪声，会微微透出背景），按 255/250 放大后方块完全不透明、抗锯齿边缘不变，颜色不动。
+  `userscript/tests/icons.test.mjs` 锁定两者的 SHA-256。
+- v1、v2 候选及其提示词保留在下方供对比。
 - Tauri：`app/src-tauri/icons/` 下的 PNG、ICO、ICNS 和 Windows Logo 资源。
 - 应用标题与 favicon：`app/public/icon.png`（64×64）。
 - 油猴管理器：脚本头的 `@icon` / `@icon64` 内嵌 32×32 / 64×64 PNG；分享右侧按钮复用 64×64 图像。
@@ -12,9 +16,13 @@
 从仓库根目录重新生成：
 
 ```text
+node scripts/prepare-icon-master.mjs
 node scripts/generate-icons.mjs
+node scripts/generate-intro-assets.mjs
 node userscript/build.mjs
 ```
+
+`generate-intro-assets.mjs` 生成桌面端片头用的 logo 与“VeilCast”字标（QOI，见 `app/README.md` 的片头一节）。
 
 生成器使用项目已安装的 Tauri CLI，只进行图片尺寸和格式转换；移动平台的中间产物留在忽略目录 `target/branding-icons/`，不生成应用安装包。
 
@@ -34,7 +42,7 @@ node userscript/build.mjs
 - 左侧细分为错序的青蓝、紫色色块；右侧保留连续渐变的完整条带。
 - 背景改为更亮的蓝色，保持圆角与透明外部。
 - 使用内置 ImageGen 编辑，完整提示词见 [icon-v2-prompts.md](icon-v2-prompts.md)。
-- 已选定为正式图稿，平台尺寸由上面的生成脚本统一导出。
+- 曾是正式图稿，已由 v3 取代。
 
 ## v1 完整生成提示词
 
