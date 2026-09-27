@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>VeilCast real-time audio restoration check</title>
+<style>
+  body { background: #111827; color: #e5e7eb; font: 14px/1.5 system-ui,sans-serif; margin: 24px; }
+  .bpx-player-primary-area { position: relative; width: 360px; height: 640px; background: #000; }
+  .bpx-player-video-area, .bpx-player-video-perch, .bpx-player-video-wrap { position: relative; width: 100%; height: 100%; }
+  video { width: 100%; height: 100%; object-fit: contain; }
+  .video-toolbar-left { display: flex; align-items: center; }
+  .video-toolbar-left-main { display: flex; gap: 24px; }
+  [data-result=pass] { color: #86efac; }
+  [data-result=fail] { color: #fca5a5; }
+  li { margin: 2px 0; }
+</style>
+<h1>音频频谱翻转：浏览器实时还原</h1>
+<p>先跑 <code>cargo test -p veilcast-app --test audio_pipeline</code>：它把只做频谱翻转（音轨提前 8192 样本）的加密文件再按 AAC 64k 转一遍，
+   生成 <code>platform.mp4</code>（元数据已抹）和 B 站式的纯音频分片 <code>platform.m4s</code>。
+   第一部分直接用实时流式翻转还原两者；第二部分检验油猴脚本读到片头后把视频自己的声音接入 AudioWorklet 实时还原，
+   以及音量、暂停、跳转、停用都照常工作。需要允许自动播放（无头浏览器加 <code>--autoplay-policy=no-user-gesture-required</code>）。</p>
+<div id="arc_toolbar_report"><div class="video-toolbar-left">
+  <div class="video-toolbar-left-main"><button>点赞</button><button>投币</button><button>收藏</button><button>分享</button></div>
+</div></div>
+<div class="bpx-player-primary-area"><div class="bpx-player-video-area"><div class="bpx-player-video-perch">
+  <div class="bpx-player-video-wrap"><video playsinline></video></div>
+</div></div></div>
+<ol id="steps"></ol>
+<p id="summary">测试运行中…</p>
+<script>
+  const saved = new Map([['veilcast.bilibili.settings.v1', { width: 100, height: 100, tile: 2, margin: 0, seed: 'wrong', invert: false, autoIntro: true, audioMs: 0 }]]);
+  window.GM_getValue = (key, fallback) => saved.get(key) ?? fallback;
+  window.GM_setValue = (key, value) => saved.set(key, structuredClone(value));
+  window.GM_registerMenuCommand = () => 1;
+  window.GM_unregisterMenuCommand = () => {};
+  history.replaceState({}, '', '/video/veilcast-audio-fixture/');
+  // Keep the worklet nodes the script creates, so the page can listen to their output.
+  window.veilcastNodes = [];
+  const NativeWorkletNode = window.AudioWorkletNode;
+  window.AudioWorkletNode = class extends NativeWorkletNode {
+    constructor(...args) { super(...args); window.veilcastNodes.push(this); }
+  };
+</script>
+<script src="/userscript/veilcast.user.js"></script>
+<script type="module">
+  import { createMirrorStream, MIRROR_STREAM_LATENCY } from '/viewer/veilcast.js';
+
+  const FIXTURES = '/target/tmp/audio-job-mirrored';
+  const SOURCE = '/target/experiment/d49672a5defc39413b8979e3dfb5f134-yuv420p/source.mp4';
+  const RATE = 48000;
+  const summary = document.getElementById('summary');
+  const steps = document.getElementById('steps');
+  const pass = (text) => steps.insertAdjacentHTML('beforeend', `<li>${text}</li>`);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  async function until(check, label, timeoutMs = 15000) {
+    for (let waited = 0; waited < timeoutMs; waited += 50) {
+      if (check()) return;
+      await sleep(50);
+    }
+    throw new Error(`timed out waiting for ${label}`);
+  }
+  async function decode(url) {
+    const bytes = await (await fetch(url)).arrayBuffer();
+    const buffer = await new OfflineAudioContext(1, 1, RATE).decodeAudioData(bytes);
+    return Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i).slice());
+  }
+  /** SNR in dB of `candidate` (from sample `from`) against the source from its start. */
+  function snr(source, candidate, from) {
+    let signal = 0;
+    let error = 0;
+    for (let c = 0; c < source.length; c++) {
+      const n = Math.min(source[c].length, candidate[c].length - from);
+      for (let i = 0; i < n; i++) {
+        const a = source[c][i];
+        const b = candidate[c][from + i];
+        signal += a * a;
+        error += (a - b) * (a - b);
+      }
+    }
+    return 10 * Math.log10(signal / Math.max(error, 1e-12));
+  }
+  /** Average power per band of a node's output over `ms`: low (200 Hz–2 kHz), high (8–10 kHz), total. */
+  async function listen(node, ms = 800) {
+    const analyser = node.context.createAnalyser();
+    analyser.fftSize = 4096;
+    analyser.smoothingTimeConstant = 0;
+    node.connect(analyser);
+    const bins = new Float32Array(analyser.frequencyBinCount);
+    const hz = node.context.sampleRate / analyser.fftSize;
+    let low = 0, high = 0, total = 0;
+    for (let waited = 0; waited < ms; waited += 50) {
+      await sleep(50);
+      analyser.getFloatFrequencyData(bins);
+      bins.forEach((db, i) => {
+        const power = Number.isFinite(db) ? 10 ** (db / 10) : 0;
+        total += power;
+        if (i * hz >= 200 && i * hz <= 2000) low += power;
+        if (i * hz >= 8000 && i * hz <= 10000) high += power;
+      });
+    }
+    node.disconnect(analyser);
+    const db = (x) => 10 * Math.log10(Math.max(x, 1e-30));
+    return { tilt: db(low) - db(high), total: db(total) };
+  }
+
+  try {
+    const source = await decode(SOURCE);
+
+    // Part 1: the streaming mirror alone on real AAC 64k data, fed in render quanta.
+    const report = [];
+    for (const [name, priming] of [['platform.m4s', 1024], ['platform.mp4', 0]]) {
+      const channels = await decode(`${FIXTURES}/${name}`);
+      const exposed = snr(source, channels, RATE - MIRROR_STREAM_LATENCY + priming);
+      const start = RATE - MIRROR_STREAM_LATENCY + priming;
+      const stream = createMirrorStream(2, { anchor: start });
+      const output = channels.map((c) => new Float32Array(c.length));
+      for (let at = 0; at < channels[0].length; at += 128) {
+        stream.process(channels.map((c) => c.subarray(at, at + 128)), output.map((c) => c.subarray(at, at + 128)));
+      }
+      const restored = snr(source, output, RATE + priming);
+      report.push(`${name}: 还原 ${restored.toFixed(1)} dB，上传 ${exposed.toFixed(1)} dB`);
+      assert(restored > 10, `${name}: restored SNR ${restored.toFixed(1)} dB`);
+      assert(exposed < 3, `${name}: upload SNR ${exposed.toFixed(1)} dB`);
+    }
+    pass(`真实 AAC 64k 数据，按 128 样本一块实时处理，延迟 ${MIRROR_STREAM_LATENCY} 样本正好抵消提前量：${report.join('；')}`);
+
+    // Part 2: the userscript reads the intro and routes the video's own sound through the worklet.
+    const video = document.querySelector('video');
+    const ui = () => document.getElementById('veilcast-userscript-ui');
+    const panel = () => ui()?.shadowRoot;
+    await until(() => ui(), 'the panel to mount');
+    video.src = `${FIXTURES}/platform.mp4`;
+    video.loop = true;
+    await video.play();
+    await until(() => ui().dataset.enabled === 'true', 'the intro to enable restoration');
+    assert(panel().querySelector('[name=audioMs]').value === '0', 'mirror only: no block length');
+    assert(panel().querySelector('[name=audioMirror]').checked, 'the intro QR switches the spectrum mirror on');
+    await until(() => ui().dataset.audio === 'ready' || ui().dataset.audio === 'error', 'the audio to be routed', 15000);
+    assert(ui().dataset.audio === 'ready', `audio state ${ui().dataset.audio}: ${panel().getElementById('audio-status').textContent}`);
+    assert(ui().dataset.audioMode === 'realtime', `audio mode ${ui().dataset.audioMode}`);
+    assert(!video.muted, 'the player keeps its sound switched on');
+    assert(!panel().querySelector('audio[data-veilcast-audio]'), 'nothing is downloaded or played beside the video');
+    const node = window.veilcastNodes.at(-1);
+    assert(node, 'an AudioWorkletNode carries the video sound');
+    await sleep(600);
+    const restoredSound = await listen(node);
+    assert(restoredSound.tilt > 10, `restored output should be low-frequency heavy, tilt ${restoredSound.tilt.toFixed(1)} dB`);
+    pass(`片头二维码 → 实时还原（${panel().getElementById('audio-status').textContent}）：输出低频比 8–10 kHz 高 ${restoredSound.tilt.toFixed(1)} dB（加扰音轨正好相反）`);
+
+    // The same stretch of music at two volumes: seek back, let the mirror refill, listen.
+    const at = async (volume) => {
+      video.volume = volume;
+      video.currentTime = 2;
+      await until(() => !video.seeking, 'the seek');
+      await sleep(500);
+      return listen(node, 600);
+    };
+    const loud = await at(1);
+    const quiet = await at(0.25);
+    const drop = loud.total - quiet.total;
+    assert(drop > 9 && drop < 15, `volume 0.25 should cost ~12 dB, got ${drop.toFixed(1)} dB`);
+    video.volume = 1;
+    pass(`播放器音量照常生效：音量 0.25 时输出降低 ${drop.toFixed(1)} dB`);
+
+    video.pause();
+    await sleep(300);
+    const paused = await listen(node, 400);
+    assert(paused.total < restoredSound.total - 60, `paused output should be silent, ${paused.total.toFixed(1)} dB`);
+    video.currentTime = 3;
+    await until(() => !video.seeking, 'the seek');
+    await video.play();
+    await sleep(700);
+    const afterSeek = await listen(node);
+    assert(afterSeek.tilt > 10, `restored after seek, tilt ${afterSeek.tilt.toFixed(1)} dB`);
+    pass(`暂停时实时还原冻结，没有残留声音（${paused.total.toFixed(0)} dB）；跳转后继续还原（低频比高频高 ${afterSeek.tilt.toFixed(1)} dB）`);
+
+    panel().getElementById('toggle').click();
+    await until(() => ui().dataset.enabled === 'false' && ui().dataset.audio === 'off', 'restoration to switch off');
+    await sleep(300);
+    const off = await listen(node, 400);
+    assert(off.total < restoredSound.total - 60, `the worklet is out of the path, ${off.total.toFixed(1)} dB`);
+    assert(!video.muted, 'the page keeps its sound');
+    panel().getElementById('toggle').click();
+    await until(() => ui().dataset.enabled === 'true' && ui().dataset.audioMode === 'realtime', 'restoration to switch on again');
+    await sleep(600);
+    const again = await listen(window.veilcastNodes.at(-1));
+    assert(again.tilt > 10, `restored again, tilt ${again.tilt.toFixed(1)} dB`);
+    pass(`停用后原声直接交还页面、实时还原退出信号链；再次启用立即恢复（低频比高频高 ${again.tilt.toFixed(1)} dB）`);
+
+    summary.dataset.result = 'pass';
+    summary.textContent = `pass: ${steps.children.length} 项检查通过`;
+  } catch (error) {
+    summary.dataset.result = 'fail';
+    summary.textContent = `FAIL: ${error.stack ?? error}`;
+  }
+</script>

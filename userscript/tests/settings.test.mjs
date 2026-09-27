@@ -138,16 +138,17 @@ test('audio block length: 0 is off, the desktop switch maps onto it', () => {
   assert.equal(validateSettings({ audioMs: '250' }, defaults).audioMs, 250);
   assert.equal(validateSettings({ audioMs: '' }, defaults).audioMs, 0);
   for (const bad of [-1, 10000, 2.5, 'x']) assert.throws(() => validateSettings({ audioMs: bad }, defaults), /音频块长/);
+  // The desktop's audio switch is the mirror; new uploads are never block-reversed.
   const app = { width: 720, height: 1280, tile: 40, margin: 0, seed: 's', invert: false, audio: false, audioMs: 250 };
   assert.equal(userscriptDefaults(app).audioMs, 0);
-  assert.equal(userscriptDefaults({ ...app, audio: true }).audioMs, 250);
+  assert.equal(userscriptDefaults({ ...app, audio: true }).audioMs, 0);
   // A page remembers its block length with the rest of the plan.
   const pages = rememberPageSettings({}, '/video/BV1/?p=1', validateSettings({ audioMs: 250 }, defaults), 'intro');
   assert.equal(pageSettings(pages, '/video/BV1/?p=1').settings.audioMs, 250);
 });
 
 test('the audio mirror is a strict boolean; anything saved before it existed was reversal only', () => {
-  const app = { width: 720, height: 1280, tile: 40, margin: 0, seed: 's', invert: false, audio: true, audioMs: 250, audioMirror: true };
+  const app = { width: 720, height: 1280, tile: 40, margin: 0, seed: 's', invert: false, audio: true, audioMs: 0 };
   assert.equal(userscriptDefaults(app).audioMirror, true);
   assert.equal(userscriptDefaults({ ...app, audio: false }).audioMirror, false);
   assert.equal(validateSettings({ audioMirror: 'true' }, defaults).audioMirror, true);

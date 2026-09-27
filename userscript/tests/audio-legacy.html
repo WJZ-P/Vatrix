@@ -13,8 +13,8 @@
   [data-result=fail] { color: #fca5a5; }
   li { margin: 2px 0; }
 </style>
-<h1>音频频谱翻转 + 分块倒放：浏览器端还原</h1>
-<p>先跑 <code>cargo test -p veilcast-app --test audio_pipeline</code>：它把频谱翻转 + 250 ms 倒放的加密文件再按 AAC 64k 转一遍，
+<h1>旧格式（频谱翻转 + 分块倒放）：浏览器下载还原</h1>
+<p>先跑 <code>cargo test -p veilcast-app --test audio_pipeline</code>：它把 0.2.0 格式（频谱翻转 + 250 ms 倒放）的加密文件再按 AAC 64k 转一遍，
    生成 <code>platform.mp4</code>（元数据已抹）和 B 站式的纯音频分片 <code>platform.m4s</code>。
    第一部分直接检验解码、找栅格、倒回来的结果；第二部分检验油猴脚本读到片头后自动下载、还原并同步播放。</p>
 <div id="arc_toolbar_report"><div class="video-toolbar-left">
@@ -34,13 +34,13 @@
   // ?activate: the harness clicks the page first (CDP_CLICK=1), which is what
   // lets the script silence the page by capture instead of by muting.
   window.veilcastActivate = new URLSearchParams(location.search).has('activate');
-  history.replaceState({}, '', '/video/veilcast-audio-fixture/');
+  history.replaceState({}, '', '/video/veilcast-audio-legacy-fixture/');
 </script>
 <script src="/userscript/veilcast.user.js"></script>
 <script type="module">
   import { findAudioSync, mirrorAudioSpectrum, reverseAudioBlocks } from '/viewer/veilcast.js';
 
-  const FIXTURES = '/target/tmp/audio-job-mirrored';
+  const FIXTURES = '/target/tmp/audio-job-legacy';
   const SOURCE = '/target/experiment/d49672a5defc39413b8979e3dfb5f134-yuv420p/source.mp4';
   const RATE = 48000;
   const summary = document.getElementById('summary');

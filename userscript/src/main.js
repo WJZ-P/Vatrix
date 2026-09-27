@@ -145,8 +145,8 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
           <label>原始高度<input name="height" type="number" min="1" max="16384" step="1" required></label>
         </div>
         <small>填写加密前的尺寸，而非当前播放清晰度；五项参数需与加密端一致。</small>
-        <label>音频块长 ms（0 = 不处理音频）<input name="audioMs" type="number" min="0" max="9999" step="1" required></label>
         <label class="check"><input name="audioMirror" type="checkbox">音频频谱翻转（与加密端保持一致）</label>
+        <label>旧版音频分块倒放 ms（0 = 无）<input name="audioMs" type="number" min="0" max="9999" step="1" required></label>
         <label class="check"><input name="invert" type="checkbox">反色（与加密端保持一致）</label>
         <label class="check"><input name="autoIntro" type="checkbox">自动读取片头二维码并启用还原</label>
         <button id="from-description" type="button">读取简介参数</button>
@@ -160,7 +160,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
         <details id="log-details"><summary>查看诊断日志（本地，已脱敏）</summary>
           <textarea id="diagnostic-log" readonly spellcheck="false" aria-label="VeilCast 诊断日志"></textarea>
         </details>
-        <small>音频块长大于 0 时一并还原声音；弹幕和播放控制保留。</small>
+        <small>勾选频谱翻转或倒放块长大于 0 时一并还原声音；弹幕和播放控制保留。</small>
       </form></dialog>`;
     const brandIcon = shadow.getElementById('brand-icon');
     shadow.getElementById('build-version').textContent = `v${scriptVersion}`;
@@ -296,9 +296,9 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
       audioStatus.hidden = !text;
       audioStatus.dataset.error = String(state === 'error');
     }
-    /** Keeps the audio restorer in line with `enabled` and the block length. */
+    /** Keeps the audio restorer in line with `enabled`, the block length and the mirror. */
     function syncAudio() {
-      const wanted = !dead && enabled && settings.audioMs > 0 && Boolean(audio);
+      const wanted = !dead && enabled && (settings.audioMs > 0 || settings.audioMirror) && Boolean(audio);
       const source = video.currentSrc || video.src || '';
       if (audioRestorer && (audioRestorer.blockMs !== settings.audioMs || audioRestorer.mirror !== settings.audioMirror
         || audioSource !== source)) {
@@ -319,16 +319,21 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
           return;
         }
         audioSource = source;
-        audioRestorer = audio.createAudioRestorer({
+        const trace = (event, details) => log(`audio.${event}`, { mountId, ...details },
+          /error|rejected|failed|unavailable/.test(event) ? 'warn' : 'info');
+        const download = () => audio.createAudioRestorer({
           video,
           blockMs: settings.audioMs,
           mirror: settings.audioMirror,
           host: shadow,
           locate: (signal) => audio.locateAudio(video, audioUrls, { since, signal }),
           report: audioReport,
-          trace: (event, details) => log(`audio.${event}`, { mountId, ...details },
-            /error|rejected/.test(event) ? 'warn' : 'info'),
+          trace,
         });
+        // Mirror-only uploads are undone on the video's own sound; block reversal needs the whole track.
+        audioRestorer = settings.audioMs === 0
+          ? audio.createRealtimeMirror({ video, report: audioReport, fallback: download, trace })
+          : download();
         ui.dataset.audioMode = audioRestorer.mode;
       } catch (error) {
         log('audio.init-failed', { mountId, error }, 'error');

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         VeilCast Bilibili Restorer
 // @namespace    veilcast.local
-// @version      0.2.0
+// @version      0.3.0
 // @description  使用与桌面端一致的 seed、tile、margin 在播放器上叠加还原画面
 // @icon         data:image/png;base64,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
 // @icon64       data:image/png;base64,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
@@ -17,7 +17,7 @@
 // Generated by userscript/build.mjs; edit source files, then rebuild.
 (() => {
 'use strict';
-console.info('[VeilCast 0.2.0] script.loading');
+console.info('[VeilCast 0.3.0] script.loading');
 // Source: ../viewer/vendor/jsQR.js (Apache-2.0, see viewer/vendor/jsQR.LICENSE)
 const jsQR = (() => {
   const module = { exports: {} };
@@ -10211,25 +10211,25 @@ function headerChecksum(digits) {
   return String(r).padStart(2, "0");
 }
 
-function validateHeaderFields({ width, height, tile, margin, audioMs, audioMirror = false }) {
+function validateHeaderFields({ width, height, tile, margin, audioMs }) {
   if (!Number.isInteger(width) || width < 1 || width > 9999) throw new Error("header field width is out of range");
   if (!Number.isInteger(height) || height < 1 || height > 9999) throw new Error("header field height is out of range");
   if (!Number.isInteger(tile) || tile < 2 || tile > 998 || tile % 2 !== 0) throw new Error("header field tile is out of range");
   if (!Number.isInteger(margin) || margin < 0 || margin > 98 || margin % 2 !== 0) throw new Error("header field margin is out of range");
   if (!Number.isInteger(audioMs) || audioMs < 0 || audioMs > 9999) throw new Error("header field audio is out of range");
-  if (audioMirror && audioMs === 0) throw new Error("header field flags is out of range");
 }
 
 /**
  * Digit string of the intro header, identical to IntroHeader::encode in Rust:
  * version(2) width(4) height(4) tile(3) margin(2) flags(1) audio(4) [seed(20)] check(2).
- * Flags: bit 0 invert, bit 1 audio spectrum mirror (only with audio).
+ * Flags: bit 0 invert, bit 1 audio spectrum mirror (alone when audioMs is 0,
+ * the track then shifted MIRROR_STREAM_LATENCY samples early; else after the reversal).
  * `audioMs` is the audio block length (0 = audio untouched). `seed` is the
  * numeric seed (bigint/number) or null; the text a user typed goes through
  * seedFromText first.
  */
 function encodeIntroHeader({ width, height, tile, margin, invert = false, audioMs = 0, audioMirror = false, seed = null }) {
-  validateHeaderFields({ width, height, tile, margin, audioMs, audioMirror });
+  validateHeaderFields({ width, height, tile, margin, audioMs });
   const pad = (value, digits) => String(value).padStart(digits, "0");
   const flags = (invert ? 1 : 0) | (audioMirror ? 2 : 0);
   let digits = pad(HEADER_VERSION, 2) + pad(width, 4) + pad(height, 4) + pad(tile, 3) + pad(margin, 2) + flags + pad(audioMs, 4);
@@ -10252,7 +10252,8 @@ function parseIntroHeader(text) {
   if (version !== HEADER_VERSION) throw new Error(`unknown header version ${version}`);
   if (text.slice(-2) !== headerChecksum(text.slice(0, -2))) throw new Error("header checksum mismatch");
   const flags = Number(text[15]);
-  if (flags > 3) throw new Error("header field flags is out of range");
+  // Historical layouts predate the audio mirror bit.
+  if (flags > 3 || (legacy && flags > 1)) throw new Error("header field flags is out of range");
   let seed = null;
   if (text.length === 38 || text.length === 42) {
     const seedOffset = legacy ? 16 : 20;
@@ -10557,6 +10558,127 @@ async function mirrorAudioSpectrumAsync(channels, { anchor = 0, signal, sliceFra
     await new Promise((resolve) => setTimeout(resolve, 0));
     if (signal?.aborted) throw new DOMException("mirror aborted", "AbortError");
   }
+}
+
+/** veilcast_core::MIRROR_STREAM_LATENCY: a mirror-only upload runs this many samples early. */
+const MIRROR_STREAM_LATENCY = 8192;
+
+/**
+ * Real-time spectrum mirror: the same f -> 10171.875 Hz - f map as
+ * mirrorAudioSpectrum, fed and drained in arbitrary slices (an AudioWorklet's
+ * 128-frame quanta) with a fixed latency of exactly `size` samples: output
+ * sample i is mirrored input sample i - size. `anchor` is the input sample
+ * where the carrier phase is zero; a wrong anchor only rotates the phase of
+ * the whole band, which is close to inaudible. `size` is a multiple of 2048.
+ *
+ * Self-contained on purpose (no outer references): the userscript ships its
+ * source text into an AudioWorklet module.
+ */
+function createMirrorStream(channelCount, { size = 8192, anchor = 0 } = {}) {
+  const n = size, hop = n / 2;
+  const scale = n / 2048;
+  if (!Number.isInteger(scale) || scale < 1 || (scale & (scale - 1)) !== 0) throw new Error("mirror stream size must be 2048 times a power of two");
+  const low = 7 * scale, high = 427 * scale, center = low + high;
+  const bits = Math.log2(n);
+  const reversed = new Uint32Array(n);
+  for (let i = 0; i < n; i++) {
+    let r = 0;
+    for (let b = 0; b < bits; b++) r |= ((i >> b) & 1) << (bits - 1 - b);
+    reversed[i] = r;
+  }
+  const cos = new Float64Array(n / 2), sin = new Float64Array(n / 2);
+  for (let i = 0; i < n / 2; i++) { cos[i] = Math.cos((2 * Math.PI * i) / n); sin[i] = -Math.sin((2 * Math.PI * i) / n); }
+  const window = Float64Array.from({ length: n }, (_, m) => Math.sin((Math.PI * m) / n));
+  const re = new Float64Array(n), im = new Float64Array(n);
+  const scratch = new Float64Array(4 * (high + 1));
+  const transform = () => {
+    for (let i = 0; i < n; i++) {
+      const j = reversed[i];
+      if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const half = len >> 1, step = n / len;
+      for (let i = 0; i < n; i += len) {
+        for (let k = 0; k < half; k++) {
+          const wr = cos[k * step], wi = sin[k * step];
+          const a = i + k, b = a + half;
+          const tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        }
+      }
+    }
+  };
+  const pairs = Math.ceil(channelCount / 2);
+  let frames, tails, queue, filled, frameStart, queueHead, queueLength, position;
+  // Input windows per channel, the previous frame's second halves, and a FIFO of finished samples.
+  const reset = () => {
+    frames = Array.from({ length: channelCount }, () => new Float64Array(n));
+    tails = Array.from({ length: channelCount }, () => new Float64Array(hop));
+    queue = Array.from({ length: channelCount }, () => new Float32Array(2 * n));
+    filled = hop; // Frames start one hop before the data so every sample sees two windows.
+    frameStart = -hop;
+    queueHead = 0;
+    queueLength = 0;
+    position = 0;
+  };
+  const runFrame = () => {
+    const offset = (((frameStart - anchor) % n) + n) % n;
+    const phase = (2 * Math.PI * ((center * offset) % n)) / n;
+    const c = Math.cos(phase), s = Math.sin(phase);
+    for (let pair = 0; pair < pairs; pair++) {
+      const a = frames[2 * pair], b = frames[2 * pair + 1];
+      for (let m = 0; m < n; m++) { re[m] = a[m] * window[m]; im[m] = b ? b[m] * window[m] : 0; }
+      transform();
+      for (let k = low; k <= high; k++) {
+        scratch[4 * k] = re[k]; scratch[4 * k + 1] = im[k]; scratch[4 * k + 2] = re[n - k]; scratch[4 * k + 3] = im[n - k];
+      }
+      for (let k = low; k <= high; k++) {
+        const j = center - k;
+        const nr = scratch[4 * j + 2], ni = scratch[4 * j + 3], pr = scratch[4 * j], pi = scratch[4 * j + 1];
+        re[k] = c * nr - s * ni; im[k] = s * nr + c * ni;
+        re[n - k] = c * pr + s * pi; im[n - k] = c * pi - s * pr;
+      }
+      for (let m = 0; m < n; m++) im[m] = -im[m];
+      transform();
+      const tailA = tails[2 * pair], tailB = tails[2 * pair + 1];
+      const outA = queue[2 * pair], outB = queue[2 * pair + 1];
+      for (let m = 0; m < hop; m++) {
+        const at = (queueHead + queueLength + m) % (2 * n);
+        outA[at] = tailA[m] + (re[m] / n) * window[m];
+        tailA[m] = (re[m + hop] / n) * window[m + hop];
+        if (b) {
+          outB[at] = tailB[m] - (im[m] / n) * window[m];
+          tailB[m] = -(im[m + hop] / n) * window[m + hop];
+        }
+      }
+    }
+    queueLength += hop;
+    for (const frame of frames) frame.copyWithin(0, hop);
+    filled = n - hop;
+    frameStart += hop;
+  };
+  reset();
+  return {
+    latency: n,
+    reset,
+    /** `inputs`/`outputs`: arrays of `channelCount` Float32Arrays of one common length; missing inputs read as silence. */
+    process(inputs, outputs) {
+      const length = outputs[0].length;
+      for (let i = 0; i < length; i++) {
+        for (let ch = 0; ch < channelCount; ch++) frames[ch][filled] = inputs[ch]?.[i] ?? 0;
+        if (++filled === n) runFrame();
+        // Output sample `position` is input sample position - n; the FIFO starts at -hop.
+        const wanted = position++ - n;
+        if (wanted < -hop) {
+          for (let ch = 0; ch < channelCount; ch++) outputs[ch][i] = 0;
+        } else {
+          for (let ch = 0; ch < channelCount; ch++) outputs[ch][i] = wanted < 0 ? 0 : queue[ch][queueHead];
+          queueHead = (queueHead + 1) % (2 * n);
+          queueLength--;
+        }
+      }
+    },
+  };
 }
 
 /** Samples from the start of the sync chirp to the first content sample; veilcast_core::SYNC_CHIRP_LEAD. */
@@ -10865,12 +10987,12 @@ function createRestorer(gl, params) {
 
 // Source: src/settings.js
 /**
- * The userscript's defaults from the desktop app's settings file. The desktop
- * keeps a block length even while its audio switch is off; here 0 means off.
+ * The userscript's defaults from the desktop app's settings file. The
+ * desktop's audio switch is the spectrum mirror; new uploads are never block-reversed.
  */
 function userscriptDefaults(app) {
-  const { width, height, tile, margin, seed, invert, autoIntro = true, audio = false, audioMs = 0, audioMirror = false } = app;
-  return { width, height, tile, margin, seed, invert, autoIntro, audioMs: audio ? audioMs : 0, audioMirror: audio && audioMirror };
+  const { width, height, tile, margin, seed, invert, autoIntro = true, audio = false } = app;
+  return { width, height, tile, margin, seed, invert, autoIntro, audioMs: 0, audioMirror: Boolean(audio) };
 }
 
 /** Validate desktop-compatible YUV420 parameters. Seed text is never trimmed. */
@@ -11004,15 +11126,18 @@ function videoPageKey(href) {
 
 // Source: src/audio.js
 /**
- * Audio restoration for the userscript: the page plays the uploaded track,
- * whose time runs backwards inside every block, so the script fetches that
- * same track, turns the blocks back, and plays the result from a hidden
- * <audio> element kept in step with the video.
+ * Audio restoration for the userscript.
  *
- * The whole track is decoded up front, which removes any need for look-ahead
- * and lets the block grid be found in the signal itself; the price is
- * memory: about 190 KB per second of stereo while playing, several times that
- * briefly while decoding.
+ * Mirror-only uploads (the current desktop format) are restored in real time:
+ * createRealtimeMirror routes the video's own sound through an AudioWorklet
+ * running the spectrum mirror, so pause, seek, speed, volume and mute stay
+ * the player's.
+ *
+ * Older uploads reverse time inside blocks, which needs the exact block grid
+ * and whole blocks at hand, so createAudioRestorer fetches the same track,
+ * decodes it up front, undoes it, and plays the result from a hidden <audio>
+ * element kept in step with the video. The price is memory: about 190 KB per
+ * second of stereo while playing, several times that briefly while decoding.
  */
 
 const AUDIO_RATE = 48000;
@@ -11172,7 +11297,7 @@ function silence(video, trace = () => {}) {
         const source = context.createMediaElementSource(video);
         attached = true;
         source.connect(gain).connect(context.destination);
-        capture = { context, gain };
+        capture = { context, gain, source };
         captures.set(video, capture);
       }
       const resume = () => {
@@ -11222,13 +11347,15 @@ function silence(video, trace = () => {}) {
 /**
  * Starts restoring the audio of `video`, whose blocks of `blockMs` begin
  * `introSeconds` into the media (the intro QR second); with `mirror` the
- * reversed content was spectrum-mirrored afterwards. `report(state, text)`
+ * reversed content was spectrum-mirrored afterwards. `blockMs` 0 with
+ * `mirror` is a mirror-only track running `mirrorLead` samples early, the
+ * fallback when createRealtimeMirror cannot capture the video. `report(state, text)`
  * receives 'loading' | 'ready' | 'blocked' | 'error' with a message.
  * disable()/enable() hand sound back and reuse the prepared WAV and media
  * element. destroy() additionally cancels work and releases the cached URL.
  */
 function createAudioRestorer({ video, blockMs, mirror = false, introSeconds = 1, host, locate, report, findAudioGrid, findAudioSync,
-  reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav, trace = () => {} }) {
+  reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav, mirrorLead = 8192, trace = () => {} }) {
   const abort = new AbortController();
   const audio = document.createElement('audio');
   audio.dataset.veilcastAudio = '';
@@ -11365,6 +11492,18 @@ function createAudioRestorer({ video, blockMs, mirror = false, introSeconds = 1,
     follow();
   }, { capture: true, signal: abort.signal });
 
+  function finish(wav, text, details) {
+    if (destroyed) return;
+    objectUrl = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+    prepared = true;
+    readyText = text;
+    audio.src = objectUrl;
+    audio.load();
+    note('prepared', details);
+    status('ready', readyText);
+    follow();
+  }
+
   async function prepare() {
     let stage = 'locate';
     try {
@@ -11388,6 +11527,15 @@ function createAudioRestorer({ video, blockMs, mirror = false, introSeconds = 1,
       stage = 'restore';
       const channels = Array.from({ length: decoded.numberOfChannels }, (_, i) => decoded.getChannelData(i));
       const nominal = Math.round(introSeconds * AUDIO_RATE);
+      if (blockMs === 0) {
+        // Mirror only, the track running `mirrorLead` samples early: anchor there, then delay it back.
+        const start = nominal - mirrorLead;
+        await mirrorAudioSpectrumAsync(channels, { anchor: start, signal: abort.signal });
+        if (destroyed) return;
+        for (const data of channels) data.fill(0, 0, Math.max(0, start));
+        finish(encodeWav(channels, AUDIO_RATE, { offset: -mirrorLead }), '音频已还原 · 频谱翻转', { channels: decoded.numberOfChannels, mirror });
+        return;
+      }
       // A mirrored upload marks its content start with a chirp in the intro; the blind grid search is the fallback.
       const sync = mirror ? findAudioSync(channels, { sampleRate: AUDIO_RATE, nominalStart: nominal }) : null;
       const grid = sync?.confidence >= 20 ? sync
@@ -11400,17 +11548,10 @@ function createAudioRestorer({ video, blockMs, mirror = false, introSeconds = 1,
       reverseAudioBlocks(channels, { sampleRate: AUDIO_RATE, blockMs, start: ((start % block) + block) % block });
       // The intro second (QR picture, sync chirp) stays silent.
       if (mirror) for (const data of channels) data.fill(0, 0, Math.max(0, start));
-      const wav = encodeWav(channels, AUDIO_RATE, { offset: start - nominal });
-      if (destroyed) return;
-      objectUrl = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
-      prepared = true;
       const shift = ((start - nominal) / AUDIO_RATE) * 1000;
-      readyText = '音频已还原' + (mirror ? ' · 频谱翻转' : '') + ' · 块长 ' + blockMs + ' ms · 对齐 ' + (shift >= 0 ? '+' : '') + shift.toFixed(1) + ' ms';
-      audio.src = objectUrl;
-      audio.load();
-      note('prepared', { channels: decoded.numberOfChannels, offsetMs: shift, mirror, syncConfidence: sync?.confidence, gridConfidence: grid.confidence });
-      status('ready', readyText);
-      follow();
+      finish(encodeWav(channels, AUDIO_RATE, { offset: start - nominal }),
+        '音频已还原' + (mirror ? ' · 频谱翻转' : '') + ' · 块长 ' + blockMs + ' ms · 对齐 ' + (shift >= 0 ? '+' : '') + shift.toFixed(1) + ' ms',
+        { channels: decoded.numberOfChannels, offsetMs: shift, mirror, syncConfidence: sync?.confidence, gridConfidence: grid.confidence });
     } catch (error) {
       if (destroyed) return;
       note('prepare-error', { stage, error });
@@ -11465,6 +11606,228 @@ function createAudioRestorer({ video, blockMs, mirror = false, introSeconds = 1,
   }
   try { enable(); } catch (error) { destroy(); throw error; }
   return { blockMs, mirror, get mode() { return silenced?.mode ?? 'inactive'; }, enable, disable, destroy };
+}
+
+// One mirror module per AudioContext.
+const worklets = new WeakMap();
+
+/**
+ * Source of the AudioWorklet module: the viewer's self-contained
+ * createMirrorStream plus a processor that feeds it while running and holds
+ * its state (outputting silence) while stopped, so a pause does not leak the
+ * buffered latency's worth of sound and a resume continues seamlessly.
+ * Messages: 'run', 'stop', 'reset' (after a seek).
+ */
+function mirrorWorkletSource(createMirrorStream, size) {
+  return `const createMirrorStream = ${createMirrorStream};
+registerProcessor('veilcast-mirror', class extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.stream = createMirrorStream(2, { size: ${size} });
+    this.running = false;
+    this.port.onmessage = ({ data }) => { if (data === 'reset') this.stream.reset(); else this.running = data === 'run'; };
+  }
+  process(inputs, outputs) {
+    const output = outputs[0];
+    const input = inputs[0] ?? [];
+    if (this.running) this.stream.process([input[0], input[1] ?? input[0]], output);
+    else for (const channel of output) channel.fill(0);
+    return true;
+  }
+});
+`;
+}
+
+/** Main-thread stand-in for the worklet where a page forbids loading one; adds ~21 ms of latency. */
+function scriptMirror(context, createMirrorStream, size) {
+  const stream = createMirrorStream(2, { size });
+  let running = false;
+  const node = context.createScriptProcessor(1024, 2, 2);
+  node.onaudioprocess = ({ inputBuffer, outputBuffer }) => {
+    const output = [outputBuffer.getChannelData(0), outputBuffer.getChannelData(1)];
+    if (running) stream.process([inputBuffer.getChannelData(0), inputBuffer.getChannelData(1)], output);
+    else for (const channel of output) channel.fill(0);
+  };
+  return { node, kind: 'script', post(message) { if (message === 'reset') stream.reset(); else running = message === 'run'; } };
+}
+
+/**
+ * Restores a mirror-only upload in real time: the video's own sound goes
+ * through the spectrum mirror on its way out. The track runs as early as the
+ * mirror's latency (`size` samples), so the output is back in sync with the
+ * picture; volume and mute apply before the capture and keep working.
+ *
+ * Web Audio cannot start before the page has had a user gesture, and
+ * capturing a video into a suspended graph would stall it, so until the
+ * first click the video is muted and the status asks for one. When the video
+ * cannot be captured at all (the page captured it first), `fallback()`
+ * supplies a download-based restorer that takes over.
+ */
+function createRealtimeMirror({ video, report, fallback, createMirrorStream, size = 8192, trace = () => {} }) {
+  const abort = new AbortController();
+  let active = false;
+  let destroyed = false;
+  let capture = null;
+  let mirror = null;
+  let routed = false;
+  let pending = null;
+  let delegate = null;
+  let held = null;
+
+  const note = (event, details = {}) => {
+    try { trace(event, { active, kind: mirror?.kind, routed, contextState: capture?.context.state, videoPaused: video.paused,
+      originalMuted: video.muted, volume: video.volume, ...details }); } catch { /* Diagnostics are optional. */ }
+  };
+  function status(state, text) {
+    if (destroyed || !active) return;
+    try { report(state, text); } catch (error) { note('report-error', { error }); }
+  }
+  const playing = () => !video.paused && !video.ended && !video.seeking && video.readyState >= 3;
+  function sync() { if (routed) mirror.post(playing() ? 'run' : 'stop'); }
+  function hold() {
+    if (held) return;
+    held = { wanted: video.muted };
+    video.muted = true;
+    note('original-held');
+  }
+  function release() {
+    if (!held) return;
+    const { wanted } = held;
+    held = null;
+    video.muted = wanted;
+    note('original-released');
+  }
+  function route(on) {
+    const { source, gain, context } = capture;
+    source.disconnect();
+    if (on) {
+      source.connect(mirror.node);
+      mirror.node.connect(context.destination);
+      routed = true;
+      release();
+      sync();
+      note('routed');
+      status('ready', mirror.kind === 'script' ? '音频：实时频谱还原中（兼容模式）' : '音频：实时频谱还原中');
+    } else {
+      mirror.post('stop');
+      mirror.node.disconnect();
+      source.connect(gain);
+      gain.gain.value = 1;
+      routed = false;
+      note('unrouted');
+    }
+  }
+  async function createNode(context) {
+    try {
+      if (!worklets.has(context)) {
+        const url = URL.createObjectURL(new Blob([mirrorWorkletSource(createMirrorStream, size)], { type: 'text/javascript' }));
+        worklets.set(context, context.audioWorklet.addModule(url).finally(() => URL.revokeObjectURL(url)));
+      }
+      await worklets.get(context);
+      const node = new AudioWorkletNode(context, 'veilcast-mirror', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2],
+        channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
+      return { node, kind: 'worklet', post: (message) => node.port.postMessage(message) };
+    } catch (error) {
+      note('worklet-unavailable', { error });
+      return scriptMirror(context, createMirrorStream, size);
+    }
+  }
+  /** Resolves false while Web Audio still waits for a user gesture. */
+  async function connect() {
+    if (!capture) capture = captures.get(video) ?? null;
+    if (!capture) {
+      const context = new AudioContext();
+      if (context.state !== 'running') {
+        context.close().catch(() => {});
+        return false;
+      }
+      let source;
+      try { source = context.createMediaElementSource(video); } catch (error) {
+        context.close().catch(() => {});
+        throw error;
+      }
+      const gain = context.createGain();
+      source.connect(gain).connect(context.destination);
+      capture = { context, gain, source };
+      captures.set(video, capture);
+    }
+    if (capture.context.state !== 'running') {
+      await capture.context.resume().catch(() => {});
+      if (capture.context.state !== 'running') return false;
+    }
+    if (!mirror) mirror = await createNode(capture.context);
+    if (!destroyed && active && !routed) route(true);
+    return true;
+  }
+  function useFallback(error) {
+    note('realtime-failed', { error });
+    release();
+    if (destroyed) return;
+    if (!fallback) {
+      status('error', '实时音频还原不可用：' + (error.name ?? 'Error') + '：' + (error.message ?? error));
+      return;
+    }
+    delegate = fallback();
+    if (!active) delegate.disable();
+  }
+  function start() {
+    if (pending || delegate || routed) return;
+    status('loading', '音频：正在接入实时还原…');
+    pending = connect()
+      .then((connected) => {
+        if (connected || destroyed || !active) return;
+        hold();
+        status('blocked', '音频：点击页面任意位置后开始还原声音（浏览器要求先有一次点击）');
+      })
+      .catch(useFallback)
+      .finally(() => { pending = null; });
+  }
+
+  for (const name of ['play', 'playing', 'pause', 'waiting', 'seeked', 'canplay', 'ended', 'stalled']) {
+    video.addEventListener(name, sync, { signal: abort.signal });
+  }
+  video.addEventListener('seeking', () => { if (mirror) mirror.post('reset'); sync(); }, { signal: abort.signal });
+  // While waiting for a gesture, unmuting in the player must not expose the scrambled sound.
+  video.addEventListener('volumechange', () => {
+    if (held && !video.muted) { held.wanted = false; video.muted = true; }
+  }, { signal: abort.signal });
+  document.addEventListener('pointerdown', () => {
+    if (active && !destroyed && held) start();
+  }, { capture: true, signal: abort.signal });
+
+  function enable() {
+    if (destroyed) return;
+    active = true;
+    note('enabled');
+    if (delegate) delegate.enable();
+    else if (mirror && capture?.context.state === 'running') { if (!routed) route(true); }
+    else start();
+  }
+  function disable() {
+    if (destroyed || !active) return;
+    active = false;
+    if (delegate) delegate.disable();
+    else if (routed) route(false);
+    release();
+    note('disabled');
+  }
+  function destroy() {
+    if (destroyed) return;
+    disable();
+    destroyed = true;
+    abort.abort();
+    delegate?.destroy();
+    if (mirror) { mirror.post('stop'); mirror.node.disconnect(); }
+    mirror = null;
+    note('destroyed');
+  }
+  try { enable(); } catch (error) { destroy(); throw error; }
+  return {
+    blockMs: 0,
+    mirror: true,
+    get mode() { return delegate ? delegate.mode : routed ? 'realtime' : held ? 'muted' : 'inactive'; },
+    enable, disable, destroy,
+  };
 }
 
 // Source: src/diagnostics.js
@@ -11819,8 +12182,8 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
           <label>原始高度<input name="height" type="number" min="1" max="16384" step="1" required></label>
         </div>
         <small>填写加密前的尺寸，而非当前播放清晰度；五项参数需与加密端一致。</small>
-        <label>音频块长 ms（0 = 不处理音频）<input name="audioMs" type="number" min="0" max="9999" step="1" required></label>
         <label class="check"><input name="audioMirror" type="checkbox">音频频谱翻转（与加密端保持一致）</label>
+        <label>旧版音频分块倒放 ms（0 = 无）<input name="audioMs" type="number" min="0" max="9999" step="1" required></label>
         <label class="check"><input name="invert" type="checkbox">反色（与加密端保持一致）</label>
         <label class="check"><input name="autoIntro" type="checkbox">自动读取片头二维码并启用还原</label>
         <button id="from-description" type="button">读取简介参数</button>
@@ -11834,7 +12197,7 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
         <details id="log-details"><summary>查看诊断日志（本地，已脱敏）</summary>
           <textarea id="diagnostic-log" readonly spellcheck="false" aria-label="VeilCast 诊断日志"></textarea>
         </details>
-        <small>音频块长大于 0 时一并还原声音；弹幕和播放控制保留。</small>
+        <small>勾选频谱翻转或倒放块长大于 0 时一并还原声音；弹幕和播放控制保留。</small>
       </form></dialog>`;
     const brandIcon = shadow.getElementById('brand-icon');
     shadow.getElementById('build-version').textContent = `v${scriptVersion}`;
@@ -11970,9 +12333,9 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
       audioStatus.hidden = !text;
       audioStatus.dataset.error = String(state === 'error');
     }
-    /** Keeps the audio restorer in line with `enabled` and the block length. */
+    /** Keeps the audio restorer in line with `enabled`, the block length and the mirror. */
     function syncAudio() {
-      const wanted = !dead && enabled && settings.audioMs > 0 && Boolean(audio);
+      const wanted = !dead && enabled && (settings.audioMs > 0 || settings.audioMirror) && Boolean(audio);
       const source = video.currentSrc || video.src || '';
       if (audioRestorer && (audioRestorer.blockMs !== settings.audioMs || audioRestorer.mirror !== settings.audioMirror
         || audioSource !== source)) {
@@ -11993,16 +12356,21 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
           return;
         }
         audioSource = source;
-        audioRestorer = audio.createAudioRestorer({
+        const trace = (event, details) => log(`audio.${event}`, { mountId, ...details },
+          /error|rejected|failed|unavailable/.test(event) ? 'warn' : 'info');
+        const download = () => audio.createAudioRestorer({
           video,
           blockMs: settings.audioMs,
           mirror: settings.audioMirror,
           host: shadow,
           locate: (signal) => audio.locateAudio(video, audioUrls, { since, signal }),
           report: audioReport,
-          trace: (event, details) => log(`audio.${event}`, { mountId, ...details },
-            /error|rejected/.test(event) ? 'warn' : 'info'),
+          trace,
         });
+        // Mirror-only uploads are undone on the video's own sound; block reversal needs the whole track.
+        audioRestorer = settings.audioMs === 0
+          ? audio.createRealtimeMirror({ video, report: audioReport, fallback: download, trace })
+          : download();
         ui.dataset.audioMode = audioRestorer.mode;
       } catch (error) {
         log('audio.init-failed', { mountId, error }, 'error');
@@ -12333,16 +12701,18 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
   return { dispose };
 }
 
-const diagnostics = createDiagnostics({ version: "0.2.0" });
+const diagnostics = createDiagnostics({ version: "0.3.0" });
 try {
 installUserscript({
   createRestorer, scanIntro, decodeQr, createIntroReader, validateSettings, querySettings, descriptionSettings, videoPageKey,
-  diagnostics, introVideoState, scriptVersion: "0.2.0",
+  diagnostics, introVideoState, scriptVersion: "0.3.0",
   iconUrl: "data:image/png;base64,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",
   pageSettings, rememberPageSettings, forgetPageSettings,
   audio: {
     watchAudioUrls, locateAudio,
-    createAudioRestorer: (options) => createAudioRestorer({ ...options, findAudioGrid, findAudioSync, reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav }),
+    createAudioRestorer: (options) => createAudioRestorer({ ...options, findAudioGrid, findAudioSync, reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav,
+      mirrorLead: MIRROR_STREAM_LATENCY }),
+    createRealtimeMirror: (options) => createRealtimeMirror({ ...options, createMirrorStream, size: MIRROR_STREAM_LATENCY }),
   },
   defaults: {"width":720,"height":1280,"tile":40,"margin":0,"seed":"20040821","invert":false,"autoIntro":true,"audioMs":0,"audioMirror":false},
   storage: { get: GM_getValue, set: GM_setValue },

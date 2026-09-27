@@ -1,10 +1,10 @@
 /**
- * The userscript's defaults from the desktop app's settings file. The desktop
- * keeps a block length even while its audio switch is off; here 0 means off.
+ * The userscript's defaults from the desktop app's settings file. The
+ * desktop's audio switch is the spectrum mirror; new uploads are never block-reversed.
  */
 export function userscriptDefaults(app) {
-  const { width, height, tile, margin, seed, invert, autoIntro = true, audio = false, audioMs = 0, audioMirror = false } = app;
-  return { width, height, tile, margin, seed, invert, autoIntro, audioMs: audio ? audioMs : 0, audioMirror: audio && audioMirror };
+  const { width, height, tile, margin, seed, invert, autoIntro = true, audio = false } = app;
+  return { width, height, tile, margin, seed, invert, autoIntro, audioMs: 0, audioMirror: Boolean(audio) };
 }
 
 /** Validate desktop-compatible YUV420 parameters. Seed text is never trimmed. */

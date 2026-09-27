@@ -1,13 +1,16 @@
 /**
- * Audio restoration for the userscript: the page plays the uploaded track,
- * whose time runs backwards inside every block, so the script fetches that
- * same track, turns the blocks back, and plays the result from a hidden
- * <audio> element kept in step with the video.
+ * Audio restoration for the userscript.
  *
- * The whole track is decoded up front, which removes any need for look-ahead
- * and lets the block grid be found in the signal itself; the price is
- * memory: about 190 KB per second of stereo while playing, several times that
- * briefly while decoding.
+ * Mirror-only uploads (the current desktop format) are restored in real time:
+ * createRealtimeMirror routes the video's own sound through an AudioWorklet
+ * running the spectrum mirror, so pause, seek, speed, volume and mute stay
+ * the player's.
+ *
+ * Older uploads reverse time inside blocks, which needs the exact block grid
+ * and whole blocks at hand, so createAudioRestorer fetches the same track,
+ * decodes it up front, undoes it, and plays the result from a hidden <audio>
+ * element kept in step with the video. The price is memory: about 190 KB per
+ * second of stereo while playing, several times that briefly while decoding.
  */
 
 const AUDIO_RATE = 48000;
@@ -167,7 +170,7 @@ function silence(video, trace = () => {}) {
         const source = context.createMediaElementSource(video);
         attached = true;
         source.connect(gain).connect(context.destination);
-        capture = { context, gain };
+        capture = { context, gain, source };
         captures.set(video, capture);
       }
       const resume = () => {
@@ -217,13 +220,15 @@ function silence(video, trace = () => {}) {
 /**
  * Starts restoring the audio of `video`, whose blocks of `blockMs` begin
  * `introSeconds` into the media (the intro QR second); with `mirror` the
- * reversed content was spectrum-mirrored afterwards. `report(state, text)`
+ * reversed content was spectrum-mirrored afterwards. `blockMs` 0 with
+ * `mirror` is a mirror-only track running `mirrorLead` samples early, the
+ * fallback when createRealtimeMirror cannot capture the video. `report(state, text)`
  * receives 'loading' | 'ready' | 'blocked' | 'error' with a message.
  * disable()/enable() hand sound back and reuse the prepared WAV and media
  * element. destroy() additionally cancels work and releases the cached URL.
  */
 export function createAudioRestorer({ video, blockMs, mirror = false, introSeconds = 1, host, locate, report, findAudioGrid, findAudioSync,
-  reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav, trace = () => {} }) {
+  reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav, mirrorLead = 8192, trace = () => {} }) {
   const abort = new AbortController();
   const audio = document.createElement('audio');
   audio.dataset.veilcastAudio = '';
@@ -360,6 +365,18 @@ export function createAudioRestorer({ video, blockMs, mirror = false, introSecon
     follow();
   }, { capture: true, signal: abort.signal });
 
+  function finish(wav, text, details) {
+    if (destroyed) return;
+    objectUrl = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+    prepared = true;
+    readyText = text;
+    audio.src = objectUrl;
+    audio.load();
+    note('prepared', details);
+    status('ready', readyText);
+    follow();
+  }
+
   async function prepare() {
     let stage = 'locate';
     try {
@@ -383,6 +400,15 @@ export function createAudioRestorer({ video, blockMs, mirror = false, introSecon
       stage = 'restore';
       const channels = Array.from({ length: decoded.numberOfChannels }, (_, i) => decoded.getChannelData(i));
       const nominal = Math.round(introSeconds * AUDIO_RATE);
+      if (blockMs === 0) {
+        // Mirror only, the track running `mirrorLead` samples early: anchor there, then delay it back.
+        const start = nominal - mirrorLead;
+        await mirrorAudioSpectrumAsync(channels, { anchor: start, signal: abort.signal });
+        if (destroyed) return;
+        for (const data of channels) data.fill(0, 0, Math.max(0, start));
+        finish(encodeWav(channels, AUDIO_RATE, { offset: -mirrorLead }), '音频已还原 · 频谱翻转', { channels: decoded.numberOfChannels, mirror });
+        return;
+      }
       // A mirrored upload marks its content start with a chirp in the intro; the blind grid search is the fallback.
       const sync = mirror ? findAudioSync(channels, { sampleRate: AUDIO_RATE, nominalStart: nominal }) : null;
       const grid = sync?.confidence >= 20 ? sync
@@ -395,17 +421,10 @@ export function createAudioRestorer({ video, blockMs, mirror = false, introSecon
       reverseAudioBlocks(channels, { sampleRate: AUDIO_RATE, blockMs, start: ((start % block) + block) % block });
       // The intro second (QR picture, sync chirp) stays silent.
       if (mirror) for (const data of channels) data.fill(0, 0, Math.max(0, start));
-      const wav = encodeWav(channels, AUDIO_RATE, { offset: start - nominal });
-      if (destroyed) return;
-      objectUrl = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
-      prepared = true;
       const shift = ((start - nominal) / AUDIO_RATE) * 1000;
-      readyText = '音频已还原' + (mirror ? ' · 频谱翻转' : '') + ' · 块长 ' + blockMs + ' ms · 对齐 ' + (shift >= 0 ? '+' : '') + shift.toFixed(1) + ' ms';
-      audio.src = objectUrl;
-      audio.load();
-      note('prepared', { channels: decoded.numberOfChannels, offsetMs: shift, mirror, syncConfidence: sync?.confidence, gridConfidence: grid.confidence });
-      status('ready', readyText);
-      follow();
+      finish(encodeWav(channels, AUDIO_RATE, { offset: start - nominal }),
+        '音频已还原' + (mirror ? ' · 频谱翻转' : '') + ' · 块长 ' + blockMs + ' ms · 对齐 ' + (shift >= 0 ? '+' : '') + shift.toFixed(1) + ' ms',
+        { channels: decoded.numberOfChannels, offsetMs: shift, mirror, syncConfidence: sync?.confidence, gridConfidence: grid.confidence });
     } catch (error) {
       if (destroyed) return;
       note('prepare-error', { stage, error });
@@ -460,4 +479,226 @@ export function createAudioRestorer({ video, blockMs, mirror = false, introSecon
   }
   try { enable(); } catch (error) { destroy(); throw error; }
   return { blockMs, mirror, get mode() { return silenced?.mode ?? 'inactive'; }, enable, disable, destroy };
+}
+
+// One mirror module per AudioContext.
+const worklets = new WeakMap();
+
+/**
+ * Source of the AudioWorklet module: the viewer's self-contained
+ * createMirrorStream plus a processor that feeds it while running and holds
+ * its state (outputting silence) while stopped, so a pause does not leak the
+ * buffered latency's worth of sound and a resume continues seamlessly.
+ * Messages: 'run', 'stop', 'reset' (after a seek).
+ */
+export function mirrorWorkletSource(createMirrorStream, size) {
+  return `const createMirrorStream = ${createMirrorStream};
+registerProcessor('veilcast-mirror', class extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.stream = createMirrorStream(2, { size: ${size} });
+    this.running = false;
+    this.port.onmessage = ({ data }) => { if (data === 'reset') this.stream.reset(); else this.running = data === 'run'; };
+  }
+  process(inputs, outputs) {
+    const output = outputs[0];
+    const input = inputs[0] ?? [];
+    if (this.running) this.stream.process([input[0], input[1] ?? input[0]], output);
+    else for (const channel of output) channel.fill(0);
+    return true;
+  }
+});
+`;
+}
+
+/** Main-thread stand-in for the worklet where a page forbids loading one; adds ~21 ms of latency. */
+function scriptMirror(context, createMirrorStream, size) {
+  const stream = createMirrorStream(2, { size });
+  let running = false;
+  const node = context.createScriptProcessor(1024, 2, 2);
+  node.onaudioprocess = ({ inputBuffer, outputBuffer }) => {
+    const output = [outputBuffer.getChannelData(0), outputBuffer.getChannelData(1)];
+    if (running) stream.process([inputBuffer.getChannelData(0), inputBuffer.getChannelData(1)], output);
+    else for (const channel of output) channel.fill(0);
+  };
+  return { node, kind: 'script', post(message) { if (message === 'reset') stream.reset(); else running = message === 'run'; } };
+}
+
+/**
+ * Restores a mirror-only upload in real time: the video's own sound goes
+ * through the spectrum mirror on its way out. The track runs as early as the
+ * mirror's latency (`size` samples), so the output is back in sync with the
+ * picture; volume and mute apply before the capture and keep working.
+ *
+ * Web Audio cannot start before the page has had a user gesture, and
+ * capturing a video into a suspended graph would stall it, so until the
+ * first click the video is muted and the status asks for one. When the video
+ * cannot be captured at all (the page captured it first), `fallback()`
+ * supplies a download-based restorer that takes over.
+ */
+export function createRealtimeMirror({ video, report, fallback, createMirrorStream, size = 8192, trace = () => {} }) {
+  const abort = new AbortController();
+  let active = false;
+  let destroyed = false;
+  let capture = null;
+  let mirror = null;
+  let routed = false;
+  let pending = null;
+  let delegate = null;
+  let held = null;
+
+  const note = (event, details = {}) => {
+    try { trace(event, { active, kind: mirror?.kind, routed, contextState: capture?.context.state, videoPaused: video.paused,
+      originalMuted: video.muted, volume: video.volume, ...details }); } catch { /* Diagnostics are optional. */ }
+  };
+  function status(state, text) {
+    if (destroyed || !active) return;
+    try { report(state, text); } catch (error) { note('report-error', { error }); }
+  }
+  const playing = () => !video.paused && !video.ended && !video.seeking && video.readyState >= 3;
+  function sync() { if (routed) mirror.post(playing() ? 'run' : 'stop'); }
+  function hold() {
+    if (held) return;
+    held = { wanted: video.muted };
+    video.muted = true;
+    note('original-held');
+  }
+  function release() {
+    if (!held) return;
+    const { wanted } = held;
+    held = null;
+    video.muted = wanted;
+    note('original-released');
+  }
+  function route(on) {
+    const { source, gain, context } = capture;
+    source.disconnect();
+    if (on) {
+      source.connect(mirror.node);
+      mirror.node.connect(context.destination);
+      routed = true;
+      release();
+      sync();
+      note('routed');
+      status('ready', mirror.kind === 'script' ? '音频：实时频谱还原中（兼容模式）' : '音频：实时频谱还原中');
+    } else {
+      mirror.post('stop');
+      mirror.node.disconnect();
+      source.connect(gain);
+      gain.gain.value = 1;
+      routed = false;
+      note('unrouted');
+    }
+  }
+  async function createNode(context) {
+    try {
+      if (!worklets.has(context)) {
+        const url = URL.createObjectURL(new Blob([mirrorWorkletSource(createMirrorStream, size)], { type: 'text/javascript' }));
+        worklets.set(context, context.audioWorklet.addModule(url).finally(() => URL.revokeObjectURL(url)));
+      }
+      await worklets.get(context);
+      const node = new AudioWorkletNode(context, 'veilcast-mirror', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2],
+        channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
+      return { node, kind: 'worklet', post: (message) => node.port.postMessage(message) };
+    } catch (error) {
+      note('worklet-unavailable', { error });
+      return scriptMirror(context, createMirrorStream, size);
+    }
+  }
+  /** Resolves false while Web Audio still waits for a user gesture. */
+  async function connect() {
+    if (!capture) capture = captures.get(video) ?? null;
+    if (!capture) {
+      const context = new AudioContext();
+      if (context.state !== 'running') {
+        context.close().catch(() => {});
+        return false;
+      }
+      let source;
+      try { source = context.createMediaElementSource(video); } catch (error) {
+        context.close().catch(() => {});
+        throw error;
+      }
+      const gain = context.createGain();
+      source.connect(gain).connect(context.destination);
+      capture = { context, gain, source };
+      captures.set(video, capture);
+    }
+    if (capture.context.state !== 'running') {
+      await capture.context.resume().catch(() => {});
+      if (capture.context.state !== 'running') return false;
+    }
+    if (!mirror) mirror = await createNode(capture.context);
+    if (!destroyed && active && !routed) route(true);
+    return true;
+  }
+  function useFallback(error) {
+    note('realtime-failed', { error });
+    release();
+    if (destroyed) return;
+    if (!fallback) {
+      status('error', '实时音频还原不可用：' + (error.name ?? 'Error') + '：' + (error.message ?? error));
+      return;
+    }
+    delegate = fallback();
+    if (!active) delegate.disable();
+  }
+  function start() {
+    if (pending || delegate || routed) return;
+    status('loading', '音频：正在接入实时还原…');
+    pending = connect()
+      .then((connected) => {
+        if (connected || destroyed || !active) return;
+        hold();
+        status('blocked', '音频：点击页面任意位置后开始还原声音（浏览器要求先有一次点击）');
+      })
+      .catch(useFallback)
+      .finally(() => { pending = null; });
+  }
+
+  for (const name of ['play', 'playing', 'pause', 'waiting', 'seeked', 'canplay', 'ended', 'stalled']) {
+    video.addEventListener(name, sync, { signal: abort.signal });
+  }
+  video.addEventListener('seeking', () => { if (mirror) mirror.post('reset'); sync(); }, { signal: abort.signal });
+  // While waiting for a gesture, unmuting in the player must not expose the scrambled sound.
+  video.addEventListener('volumechange', () => {
+    if (held && !video.muted) { held.wanted = false; video.muted = true; }
+  }, { signal: abort.signal });
+  document.addEventListener('pointerdown', () => {
+    if (active && !destroyed && held) start();
+  }, { capture: true, signal: abort.signal });
+
+  function enable() {
+    if (destroyed) return;
+    active = true;
+    note('enabled');
+    if (delegate) delegate.enable();
+    else if (mirror && capture?.context.state === 'running') { if (!routed) route(true); }
+    else start();
+  }
+  function disable() {
+    if (destroyed || !active) return;
+    active = false;
+    if (delegate) delegate.disable();
+    else if (routed) route(false);
+    release();
+    note('disabled');
+  }
+  function destroy() {
+    if (destroyed) return;
+    disable();
+    destroyed = true;
+    abort.abort();
+    delegate?.destroy();
+    if (mirror) { mirror.post('stop'); mirror.node.disconnect(); }
+    mirror = null;
+    note('destroyed');
+  }
+  try { enable(); } catch (error) { destroy(); throw error; }
+  return {
+    blockMs: 0,
+    mirror: true,
+    get mode() { return delegate ? delegate.mode : routed ? 'realtime' : held ? 'muted' : 'inactive'; },
+    enable, disable, destroy,
+  };
 }

@@ -10,7 +10,7 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-function setup(t, { captured = false, contextState = 'running', metadata = true, decoding, muted = false, play, mirror = false, syncConfidence = 500 } = {}) {
+function setup(t, { captured = false, contextState = 'running', metadata = true, decoding, muted = false, play, mirror = false, syncConfidence = 500, blockMs = 250 } = {}) {
   const counts = { fetch: 0, decode: 0, urls: 0, captures: 0, contexts: 0 };
   const elements = [], revoked = [], reports = [], traces = [], gains = [], steps = [];
   let playBehavior = play;
@@ -86,7 +86,7 @@ function setup(t, { captured = false, contextState = 'running', metadata = true,
     originals.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
-  const handle = createAudioRestorer({ video, blockMs: 250, mirror, host: { append() {} },
+  const handle = createAudioRestorer({ video, blockMs, mirror, host: { append() {} },
     locate: async () => 'https://example.invalid/audio.m4s',
     report: (state, text) => reports.push({ state, text }), trace: (event, details) => traces.push({ event, details }),
     findAudioGrid: (_, { mirrored }) => { steps.push(['grid', mirrored]); return { start: 49024, confidence: 3 }; },
@@ -105,6 +105,13 @@ function setup(t, { captured = false, contextState = 'running', metadata = true,
   return { video, document, handle, counts, elements, revoked, reports, traces, gains, decoded, steps,
     setPlay: (behavior) => { playBehavior = behavior; } };
 }
+
+test('a mirror-only upload (the real-time fallback) is mirrored back from its early start and delayed into place', async (t) => {
+  const r = setup(t, { mirror: true, blockMs: 0 });
+  await flush(); await flush();
+  assert.deepEqual(r.steps, [['mirror', 48000 - 8192, false], ['wav', -8192]]);
+  assert.match(r.reports.at(-1).text, /频谱翻转/);
+});
 
 test('a mirrored upload is located by its chirp (grid search as fallback), mirrored back, then reversed', async (t) => {
   for (const [mirror, syncConfidence] of [[false, 500], [true, 500], [true, 1]]) {

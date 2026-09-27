@@ -47,7 +47,7 @@ class Shadow {
   querySelector(selector) { assert.equal(selector, 'form'); return this.form; }
 }
 
-function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = null, result = null } = {}) {
+function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = null, realtimeFactory = null, audioPlan = { audioMs: 250 }, result = null } = {}) {
   const area = new Element();
   const wrapper = new Element();
   const toolbar = new Element();
@@ -58,10 +58,10 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
     createElement: () => new Element(), querySelectorAll: () => [video], querySelector: () => toolbar });
   const location = { href: 'https://www.bilibili.com/video/BVfixture/', search: '' };
   const saved = new Map();
-  if (audioFailure || audioFactory) {
-    saved.set('veilcast.bilibili.settings.v1', { ...defaults, autoIntro: true, audioMs: 250 });
+  if (audioFailure || audioFactory || realtimeFactory) {
+    saved.set('veilcast.bilibili.settings.v1', { ...defaults, autoIntro: true, ...audioPlan });
     saved.set('veilcast.bilibili.pages.v1', rememberPageSettings({}, videoPageKey(location.href),
-      { ...defaults, autoIntro: true, audioMs: 250 }, 'intro'));
+      { ...defaults, autoIntro: true, ...audioPlan }, 'intro'));
   }
   const callbacks = [];
   const order = [];
@@ -107,6 +107,11 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
         order.push('audio-init');
         if (audioFactory) return audioFactory(options);
         throw new Error('audio setup failed');
+      },
+      createRealtimeMirror: (options) => {
+        order.push('realtime-init');
+        if (realtimeFactory) return realtimeFactory(options);
+        throw new Error('realtime setup failed');
       } },
   });
   t.after(() => app.dispose());
@@ -191,6 +196,33 @@ test('a rejected form identifies the blocking field in diagnostics', async (t) =
   assert.match(r.panel.getElementById('intro-status').textContent, /参数未成功应用/);
   assert.ok(r.diagnostics.dump().includes('settings.form-invalid'));
   assert.ok(r.diagnostics.dump().includes('"fields":["audioMs"]'));
+});
+
+test('a mirror-only plan restores in real time, with the download restorer as its fallback', (t) => {
+  const handles = [];
+  const downloads = [];
+  const r = setup(t, {
+    audioPlan: { audioMs: 0, audioMirror: true },
+    realtimeFactory: (options) => {
+      const handle = { blockMs: 0, mirror: true, mode: 'realtime', options, enables: 0, disables: 0, destroys: 0,
+        enable() { this.enables++; }, disable() { this.disables++; }, destroy() { this.destroys++; } };
+      handles.push(handle);
+      return handle;
+    },
+    audioFactory: (options) => { downloads.push(options); return { blockMs: options.blockMs, mirror: options.mirror, mode: 'muted',
+      enable() {}, disable() {}, destroy() {} }; },
+  });
+  assert.equal(handles.length, 1);
+  assert.deepEqual(r.order.filter((step) => /^(audio|realtime)-/.test(step)), ['realtime-init']);
+  assert.equal(downloads.length, 0, 'nothing is downloaded up front');
+  // The fallback builds a download restorer for the same mirror-only plan.
+  handles[0].options.fallback();
+  assert.deepEqual([downloads[0].blockMs, downloads[0].mirror], [0, true]);
+  // A legacy block length switches to the download restorer.
+  r.panel.form.elements.namedItem('audioMs').value = '250';
+  r.panel.form.dispatchEvent(new Event('submit', { cancelable: true }));
+  assert.equal(handles[0].destroys, 1);
+  assert.deepEqual([downloads.at(-1).blockMs, downloads.at(-1).mirror], [250, true]);
 });
 
 test('the actual toggle pauses/reuses audio; block length, mirror and source changes destroy it', (t) => {
