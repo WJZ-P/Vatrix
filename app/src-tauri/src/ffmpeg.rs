@@ -596,8 +596,9 @@ impl Drop for TempFile {
 /// rotates the phase of the whole track and the reversal's jumps stay put.
 /// Loud, rhythmic content through a low-bitrate codec still defeats that
 /// search, so a mirrored intro second carries [`sync_chirp`] instead of pure
-/// silence. The mirror step is not lossless: it rounds back to 16 bits and
-/// clips anything it pushes past full scale.
+/// silence. The mirror step is not lossless: both ends drop the treble above
+/// [`veilcast_core::MIRROR_TREBLE_CUT_HZ`], and it rounds back to 16 bits,
+/// clipping anything it pushes past full scale.
 ///
 /// `block_ms` 0 with `mirror` is mirror only, which a viewer undoes in real
 /// time on the video's own sound. The scrambled track runs
@@ -718,7 +719,11 @@ pub fn scramble_audio(
         Ok(())
     };
     let mut mirror = if mirror {
-        Some(SpectrumMirror::new(channels).map_err(|e| e.to_string())?)
+        let mirror = match mode {
+            Mode::Scramble => SpectrumMirror::scrambling(channels),
+            Mode::Restore => SpectrumMirror::restoring(channels),
+        };
+        Some(mirror.map_err(|e| e.to_string())?)
     } else {
         None
     };

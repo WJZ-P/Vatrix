@@ -228,7 +228,7 @@ fn the_mirrored_and_reversed_audio_pass_round_trips() {
     };
     let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("audio-mirror-pass");
     std::fs::create_dir_all(&dir).unwrap();
-    // A voice-like harmonic tone on the left, pink noise on the right.
+    // A voice-like harmonic tone on the left, pink noise below the treble cut on the right.
     let source = dir.join("source.wav");
     let status = Command::new(ffmpeg())
         .args(["-v", "error", "-y"])
@@ -246,7 +246,7 @@ fn the_mirrored_and_reversed_audio_pass_round_trips() {
         ])
         .args([
             "-filter_complex",
-            "[0][1]join=inputs=2:channel_layout=stereo",
+            "[1]lowpass=f=8000:p=2,lowpass=f=8000:p=2,lowpass=f=8000:p=2[n];[0][n]join=inputs=2:channel_layout=stereo",
         ])
         .args(["-c:a", "pcm_s16le"])
         .arg(&source)

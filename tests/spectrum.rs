@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use veilcast_core::{AudioError, MIRROR_SAMPLE_RATE, SpectrumMirror};
+use veilcast_core::{AudioError, MIRROR_SAMPLE_RATE, MIRROR_TREBLE_CUT_HZ, SpectrumMirror};
 
 const RATE: f64 = MIRROR_SAMPLE_RATE as f64;
 /// The mirror's carrier: 3472 bins of a 16384-point frame at 48 kHz.
@@ -66,6 +66,53 @@ fn bass_and_treble_outside_the_band_pass_through() {
         let snr = snr_db(&input[20_000..76_000], &output[20_000..76_000]);
         assert!(snr > 60.0, "{hz} Hz: {snr:.1} dB");
     }
+}
+
+fn run(mut mirror: SpectrumMirror, input: &[f32]) -> Vec<f32> {
+    let mut output = Vec::new();
+    mirror.process(input, &mut output).unwrap();
+    mirror.finish(&mut output);
+    output
+}
+
+fn rms(samples: &[f32]) -> f64 {
+    (samples.iter().map(|&s| f64::from(s).powi(2)).sum::<f64>() / samples.len() as f64).sqrt()
+}
+
+#[test]
+fn both_ends_drop_the_treble_above_the_cut() {
+    assert_eq!(MIRROR_TREBLE_CUT_HZ, 9_700);
+    let frames = 96_000;
+    let middle = 20_000..76_000;
+    // Scrambling drops input treble: 14 kHz (outside the band) and 9.9 kHz
+    // (inside, where it would become 272 Hz) are gone; 1 kHz is mirrored.
+    for hz in [14_000.0, 9_900.0] {
+        let out = run(SpectrumMirror::scrambling(1).unwrap(), &tone(hz, frames));
+        assert!(
+            rms(&out[middle.clone()]) < 1e-3,
+            "{hz} Hz should be dropped"
+        );
+    }
+    let kept = run(
+        SpectrumMirror::scrambling(1).unwrap(),
+        &tone(1_000.0, frames),
+    );
+    let expected = tone(CARRIER_HZ - 1_000.0, frames);
+    assert!(snr_db(&expected[middle.clone()], &kept[middle.clone()]) > 50.0);
+    // Restoring drops output treble: 272 Hz mirrors to 9.9 kHz and is gone,
+    // 14 kHz passes the mirror untouched and is gone, 9 kHz becomes 1172 Hz and stays.
+    for hz in [CARRIER_HZ - 9_900.0, 14_000.0] {
+        let out = run(SpectrumMirror::restoring(1).unwrap(), &tone(hz, frames));
+        assert!(
+            rms(&out[middle.clone()]) < 1e-3,
+            "{hz} Hz input should be dropped"
+        );
+    }
+    let kept = run(
+        SpectrumMirror::restoring(1).unwrap(),
+        &tone(CARRIER_HZ - 1_000.0, frames),
+    );
+    assert!(snr_db(&tone(1_000.0, frames)[middle.clone()], &kept[middle]) > 50.0);
 }
 
 #[test]

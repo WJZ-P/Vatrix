@@ -23,6 +23,8 @@
   自身的逆。新文件只做翻转，音轨整体提前 `MIRROR_STREAM_LATENCY`（8192 样本 ≈ 171 ms），浏览器用固定延迟的流式翻转
   （`viewer/veilcast.js` 的 `createMirrorStream`）在视频自己的声音上实时还原，正好回到与画面同步。
   旧格式还做过 `reverse_blocks` 块内倒放（0.2.0 起倒放后再翻转，片头带 `sync_chirp` 同步扫频音），仍可还原。
+  加密和还原两端都去掉 `MIRROR_TREBLE_CUT_HZ`（9.7 kHz）以上：频段边缘的 STFT 泄漏和有损编码的噪声经翻转后都落在那里，
+  不切的话重低音会变成 10 kHz 的持续啸叫（实测比原声高 20 dB）。
 
 核心库不承担编解码和参数持久化；这些由 `app/` 桌面端和 `userscript/` 浏览器集成负责。
 暂不涉及：密码学密钥派生、并行与 SIMD。

@@ -10,6 +10,27 @@ pub const MIRROR_SAMPLE_RATE: u32 = 48_000;
 /// frames), so that its output lands back in sync with the picture.
 pub const MIRROR_STREAM_LATENCY: usize = 8_192;
 
+/// Treble above this is dropped on both ends of a mirrored track, see
+/// [`SpectrumMirror::scrambling`] and [`SpectrumMirror::restoring`].
+///
+/// Near the band edges the STFT leaks strong neighbours into the first and
+/// last mirrored bins, and a lossy codec smears its noise across the edges;
+/// the mirror then carries that energy to the far end of the band. With the
+/// scramble and the restore on different frame grids (16384 vs the viewer's
+/// 8192 points) it does not cancel: heavy bass below 164 Hz comes back as a
+/// steady tone at 10.0 kHz, 20 dB above the source, and the treble next to
+/// the upper edge picks up codec hiss once its masker has moved to the bass.
+/// Everything that goes wrong lands above 9.7 kHz.
+pub const MIRROR_TREBLE_CUT_HZ: u32 = 9_700;
+const CUT: usize = (MIRROR_TREBLE_CUT_HZ as usize * SIZE + 24_000) / 48_000;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Cut {
+    None,
+    Input,
+    Output,
+}
+
 // A 16384-point STFT (2.93 Hz bins at 48 kHz) with sqrt-Hann windows at half
 // overlap. Bins LOW..=HIGH (164 Hz–10 kHz) swap with CENTER - k. Long frames
 // keep the band edges sharp; with 2048 points the edges leak enough to cost
@@ -48,14 +69,33 @@ pub struct SpectrumMirror {
     re: Vec<f64>,
     im: Vec<f64>,
     scratch: Vec<f64>,
+    cut: Cut,
 }
 
 impl SpectrumMirror {
+    /// The bare mirror: its own inverse, treble passes through.
     pub fn new(channels: usize) -> Result<Self, AudioError> {
+        Self::with_cut(channels, Cut::None)
+    }
+
+    /// For scrambling: drops the input above [`MIRROR_TREBLE_CUT_HZ`], then
+    /// mirrors. Nothing of the source is left in the clear above the band.
+    pub fn scrambling(channels: usize) -> Result<Self, AudioError> {
+        Self::with_cut(channels, Cut::Input)
+    }
+
+    /// For restoring: mirrors, then drops the output above
+    /// [`MIRROR_TREBLE_CUT_HZ`], where the edge leakage and codec noise land.
+    pub fn restoring(channels: usize) -> Result<Self, AudioError> {
+        Self::with_cut(channels, Cut::Output)
+    }
+
+    fn with_cut(channels: usize, cut: Cut) -> Result<Self, AudioError> {
         if channels == 0 {
             return Err(AudioError::EmptyFrame);
         }
         Ok(Self {
+            cut,
             channels,
             // Frames start one hop before the data so every sample sees two windows.
             pending: vec![vec![0.0; HOP]; channels],
@@ -114,7 +154,13 @@ impl SpectrumMirror {
                 self.im[m] = second.map_or(0.0, |c| self.pending[c][m] * w);
             }
             self.fft.forward(&mut self.re, &mut self.im);
+            if self.cut == Cut::Input {
+                drop_treble(&mut self.re, &mut self.im);
+            }
             mirror_frame(&mut self.re, &mut self.im, phase, &mut self.scratch);
+            if self.cut == Cut::Output {
+                drop_treble(&mut self.re, &mut self.im);
+            }
             // Inverse transform as the conjugate of a forward one.
             for value in &mut self.im {
                 *value = -*value;
@@ -162,6 +208,12 @@ fn mirror_frame(re: &mut [f64], im: &mut [f64], phase: f64, scratch: &mut [f64])
         re[SIZE - k] = c * pr + s * pi;
         im[SIZE - k] = c * pi - s * pr;
     }
+}
+
+/// Zeroes the bins from [`MIRROR_TREBLE_CUT_HZ`] up, and their negative twins.
+fn drop_treble(re: &mut [f64], im: &mut [f64]) {
+    re[CUT..=SIZE - CUT].fill(0.0);
+    im[CUT..=SIZE - CUT].fill(0.0);
 }
 
 /// In-place radix-2 forward FFT of length SIZE, and the analysis window.
