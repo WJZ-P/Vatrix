@@ -34,7 +34,12 @@ npm run tauri build  # 打包安装程序
   `veilcast/1 width= height= tile= margin= source=WxH invert=0/1 intro= audio= mirror=0/1`（width/height 是补齐后的工作尺寸，source 是原尺寸，不含 seed）。
   开启反色时文件名增加 `-inv` 后缀，避免与相同参数的非反色输出混淆。
   再把这个文件拖回来，程序会自动认出并填好几何参数和反色状态；旧文件没有 invert 字段时默认关闭。
-- **片头二维码**（默认开）：加密时在最前面加 1 秒白底二维码（H 级纠错，占短边 60%），内容是核心库的 `IntroHeader`
+- **片头二维码**（默认开）：加密时在最前面加 1 秒片头：深蓝底，顶部是 logo 和“VeilCast”，下方白色圆角卡片里是二维码
+  （H 级纠错，卡片连同静区占短边 60%），三者从第一帧起同时出现。所有尺寸按画面短边计算、整组上下居中，
+  横屏、竖屏、方形、超宽屏都是同一构图；画面太小（logo 不足 24 像素）时只画二维码卡片。
+  logo 和字标是 `app/src-tauri/assets/` 下的 QOI 图片（`node scripts/generate-intro-assets.mjs` 从图标母版和 Segoe UI Bold 生成），
+  由 `intro.rs` 自带的解码器读入、缩放后按透明度直接画进 YUV；`cargo run -p veilcast-app --example intro_preview -- 2560x1376 720x1280`
+  可导出各尺寸的预览图。二维码内容是核心库的 `IntroHeader`
   纯数字串——原始宽高、tile、margin、反色、音频加扰方式，勾选"把 seed 也写进二维码"后还包含数值化的 seed。
   音轨相应延后 1 秒（重编码为 AAC）。解密时自动跳过片头并把音轨裁回，输出时长与原片一致。
   探测文件时元数据缺失就从片头帧读码（`rqrr`），所以从平台下载回来的文件也能自动填参数；
