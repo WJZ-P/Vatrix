@@ -81,25 +81,25 @@ function headerChecksum(digits) {
   return String(r).padStart(2, "0");
 }
 
-function validateHeaderFields({ width, height, tile, margin, audioMs, audioMirror = false }) {
+function validateHeaderFields({ width, height, tile, margin, audioMs }) {
   if (!Number.isInteger(width) || width < 1 || width > 9999) throw new Error("header field width is out of range");
   if (!Number.isInteger(height) || height < 1 || height > 9999) throw new Error("header field height is out of range");
   if (!Number.isInteger(tile) || tile < 2 || tile > 998 || tile % 2 !== 0) throw new Error("header field tile is out of range");
   if (!Number.isInteger(margin) || margin < 0 || margin > 98 || margin % 2 !== 0) throw new Error("header field margin is out of range");
   if (!Number.isInteger(audioMs) || audioMs < 0 || audioMs > 9999) throw new Error("header field audio is out of range");
-  if (audioMirror && audioMs === 0) throw new Error("header field flags is out of range");
 }
 
 /**
  * Digit string of the intro header, identical to IntroHeader::encode in Rust:
  * version(2) width(4) height(4) tile(3) margin(2) flags(1) audio(4) [seed(20)] check(2).
- * Flags: bit 0 invert, bit 1 audio spectrum mirror (only with audio).
+ * Flags: bit 0 invert, bit 1 audio spectrum mirror (alone when audioMs is 0,
+ * the track then shifted MIRROR_STREAM_LATENCY samples early; else after the reversal).
  * `audioMs` is the audio block length (0 = audio untouched). `seed` is the
  * numeric seed (bigint/number) or null; the text a user typed goes through
  * seedFromText first.
  */
 export function encodeIntroHeader({ width, height, tile, margin, invert = false, audioMs = 0, audioMirror = false, seed = null }) {
-  validateHeaderFields({ width, height, tile, margin, audioMs, audioMirror });
+  validateHeaderFields({ width, height, tile, margin, audioMs });
   const pad = (value, digits) => String(value).padStart(digits, "0");
   const flags = (invert ? 1 : 0) | (audioMirror ? 2 : 0);
   let digits = pad(HEADER_VERSION, 2) + pad(width, 4) + pad(height, 4) + pad(tile, 3) + pad(margin, 2) + flags + pad(audioMs, 4);
@@ -122,7 +122,8 @@ export function parseIntroHeader(text) {
   if (version !== HEADER_VERSION) throw new Error(`unknown header version ${version}`);
   if (text.slice(-2) !== headerChecksum(text.slice(0, -2))) throw new Error("header checksum mismatch");
   const flags = Number(text[15]);
-  if (flags > 3) throw new Error("header field flags is out of range");
+  // Historical layouts predate the audio mirror bit.
+  if (flags > 3 || (legacy && flags > 1)) throw new Error("header field flags is out of range");
   let seed = null;
   if (text.length === 38 || text.length === 42) {
     const seedOffset = legacy ? 16 : 20;
@@ -427,6 +428,127 @@ export async function mirrorAudioSpectrumAsync(channels, { anchor = 0, signal, s
     await new Promise((resolve) => setTimeout(resolve, 0));
     if (signal?.aborted) throw new DOMException("mirror aborted", "AbortError");
   }
+}
+
+/** veilcast_core::MIRROR_STREAM_LATENCY: a mirror-only upload runs this many samples early. */
+export const MIRROR_STREAM_LATENCY = 8192;
+
+/**
+ * Real-time spectrum mirror: the same f -> 10171.875 Hz - f map as
+ * mirrorAudioSpectrum, fed and drained in arbitrary slices (an AudioWorklet's
+ * 128-frame quanta) with a fixed latency of exactly `size` samples: output
+ * sample i is mirrored input sample i - size. `anchor` is the input sample
+ * where the carrier phase is zero; a wrong anchor only rotates the phase of
+ * the whole band, which is close to inaudible. `size` is a multiple of 2048.
+ *
+ * Self-contained on purpose (no outer references): the userscript ships its
+ * source text into an AudioWorklet module.
+ */
+export function createMirrorStream(channelCount, { size = 8192, anchor = 0 } = {}) {
+  const n = size, hop = n / 2;
+  const scale = n / 2048;
+  if (!Number.isInteger(scale) || scale < 1 || (scale & (scale - 1)) !== 0) throw new Error("mirror stream size must be 2048 times a power of two");
+  const low = 7 * scale, high = 427 * scale, center = low + high;
+  const bits = Math.log2(n);
+  const reversed = new Uint32Array(n);
+  for (let i = 0; i < n; i++) {
+    let r = 0;
+    for (let b = 0; b < bits; b++) r |= ((i >> b) & 1) << (bits - 1 - b);
+    reversed[i] = r;
+  }
+  const cos = new Float64Array(n / 2), sin = new Float64Array(n / 2);
+  for (let i = 0; i < n / 2; i++) { cos[i] = Math.cos((2 * Math.PI * i) / n); sin[i] = -Math.sin((2 * Math.PI * i) / n); }
+  const window = Float64Array.from({ length: n }, (_, m) => Math.sin((Math.PI * m) / n));
+  const re = new Float64Array(n), im = new Float64Array(n);
+  const scratch = new Float64Array(4 * (high + 1));
+  const transform = () => {
+    for (let i = 0; i < n; i++) {
+      const j = reversed[i];
+      if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const half = len >> 1, step = n / len;
+      for (let i = 0; i < n; i += len) {
+        for (let k = 0; k < half; k++) {
+          const wr = cos[k * step], wi = sin[k * step];
+          const a = i + k, b = a + half;
+          const tr = re[b] * wr - im[b] * wi, ti = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        }
+      }
+    }
+  };
+  const pairs = Math.ceil(channelCount / 2);
+  let frames, tails, queue, filled, frameStart, queueHead, queueLength, position;
+  // Input windows per channel, the previous frame's second halves, and a FIFO of finished samples.
+  const reset = () => {
+    frames = Array.from({ length: channelCount }, () => new Float64Array(n));
+    tails = Array.from({ length: channelCount }, () => new Float64Array(hop));
+    queue = Array.from({ length: channelCount }, () => new Float32Array(2 * n));
+    filled = hop; // Frames start one hop before the data so every sample sees two windows.
+    frameStart = -hop;
+    queueHead = 0;
+    queueLength = 0;
+    position = 0;
+  };
+  const runFrame = () => {
+    const offset = (((frameStart - anchor) % n) + n) % n;
+    const phase = (2 * Math.PI * ((center * offset) % n)) / n;
+    const c = Math.cos(phase), s = Math.sin(phase);
+    for (let pair = 0; pair < pairs; pair++) {
+      const a = frames[2 * pair], b = frames[2 * pair + 1];
+      for (let m = 0; m < n; m++) { re[m] = a[m] * window[m]; im[m] = b ? b[m] * window[m] : 0; }
+      transform();
+      for (let k = low; k <= high; k++) {
+        scratch[4 * k] = re[k]; scratch[4 * k + 1] = im[k]; scratch[4 * k + 2] = re[n - k]; scratch[4 * k + 3] = im[n - k];
+      }
+      for (let k = low; k <= high; k++) {
+        const j = center - k;
+        const nr = scratch[4 * j + 2], ni = scratch[4 * j + 3], pr = scratch[4 * j], pi = scratch[4 * j + 1];
+        re[k] = c * nr - s * ni; im[k] = s * nr + c * ni;
+        re[n - k] = c * pr + s * pi; im[n - k] = c * pi - s * pr;
+      }
+      for (let m = 0; m < n; m++) im[m] = -im[m];
+      transform();
+      const tailA = tails[2 * pair], tailB = tails[2 * pair + 1];
+      const outA = queue[2 * pair], outB = queue[2 * pair + 1];
+      for (let m = 0; m < hop; m++) {
+        const at = (queueHead + queueLength + m) % (2 * n);
+        outA[at] = tailA[m] + (re[m] / n) * window[m];
+        tailA[m] = (re[m + hop] / n) * window[m + hop];
+        if (b) {
+          outB[at] = tailB[m] - (im[m] / n) * window[m];
+          tailB[m] = -(im[m + hop] / n) * window[m + hop];
+        }
+      }
+    }
+    queueLength += hop;
+    for (const frame of frames) frame.copyWithin(0, hop);
+    filled = n - hop;
+    frameStart += hop;
+  };
+  reset();
+  return {
+    latency: n,
+    reset,
+    /** `inputs`/`outputs`: arrays of `channelCount` Float32Arrays of one common length; missing inputs read as silence. */
+    process(inputs, outputs) {
+      const length = outputs[0].length;
+      for (let i = 0; i < length; i++) {
+        for (let ch = 0; ch < channelCount; ch++) frames[ch][filled] = inputs[ch]?.[i] ?? 0;
+        if (++filled === n) runFrame();
+        // Output sample `position` is input sample position - n; the FIFO starts at -hop.
+        const wanted = position++ - n;
+        if (wanted < -hop) {
+          for (let ch = 0; ch < channelCount; ch++) outputs[ch][i] = 0;
+        } else {
+          for (let ch = 0; ch < channelCount; ch++) outputs[ch][i] = wanted < 0 ? 0 : queue[ch][queueHead];
+          queueHead = (queueHead + 1) % (2 * n);
+          queueLength--;
+        }
+      }
+    },
+  };
 }
 
 /** Samples from the start of the sync chirp to the first content sample; veilcast_core::SYNC_CHIRP_LEAD. */

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  encodeIntroHeader, encodeWav, findAudioGrid, findAudioSync, mirrorAudioSpectrum, mirrorAudioSpectrumAsync,
+  createMirrorStream, encodeIntroHeader, encodeWav, findAudioGrid, findAudioSync, MIRROR_STREAM_LATENCY, mirrorAudioSpectrum, mirrorAudioSpectrumAsync,
   parseIntroHeader, planGeometry, reverseAudioBlocks, seedFromText, seededPermutation, SYNC_CHIRP_LEAD, syncChirp,
 } from './veilcast.js';
 
@@ -90,6 +90,9 @@ test('intro header vectors match veilcast_core (tests/header.rs)', () => {
     encodeIntroHeader({ width: 720, height: 1280, tile: 16, margin: 4, invert: false }),
     '0107201280016040000016',
   );
+  // Mirror only (tests/header.rs): flags 2 without a block length.
+  assert.equal(encodeIntroHeader({ ...sample, invert: false, audioMirror: true }), '0125601370040002000026');
+  assert.deepEqual(parseIntroHeader('0125601370040002000026'), { ...sample, invert: false, audioMirror: true, seed: null });
   assert.equal(encodeIntroHeader({ ...sample, audioMs: 250, audioMirror: true }), '0125601370040003025091');
   assert.equal(
     encodeIntroHeader({ ...sample, audioMs: 250, audioMirror: true, seed: 0x88d44f40babc4fa2n }),
@@ -124,9 +127,7 @@ test('intro header parser rejects the same strings as Rust', () => {
   assert.throws(() => parseIntroHeader('012560137004000100001x'), /only decimal digits/);
   assert.throws(() => parseIntroHeader('0125601370040001000018'), /checksum/);
   assert.throws(() => parseIntroHeader('0225601370040001000009'), /unknown header version 2/);
-  assert.throws(() => parseIntroHeader('0125601370040002000026'), /flags/);
   assert.throws(() => parseIntroHeader('0125601370040004025003'), /flags/);
-  assert.throws(() => encodeIntroHeader({ width: 1, height: 1, tile: 40, margin: 0, audioMirror: true }), /flags/);
   assert.throws(() => parseIntroHeader('012560137004000100001844674407370955161641'), /seed/);
   assert.throws(() => encodeIntroHeader({ width: 1, height: 1, tile: 40, margin: 0, audioMs: 10000 }), /audio/);
   assert.throws(() => encodeIntroHeader({ width: 0, height: 1, tile: 40, margin: 0 }), /width/);
@@ -280,6 +281,43 @@ test('the grid of a mirrored upload is found on the mirrored-back copy; undoing 
   mirrorAudioSpectrum([upload], { anchor: grid.start });
   reverseAudioBlocks([upload], { sampleRate: rate, blockMs: 250, start: grid.start });
   assert.ok(snrDb(original, upload.subarray(grid.start, grid.start + original.length)) > 30);
+});
+
+test('the mirror stream has a fixed latency, ignores slicing, resets, and a wrong anchor only rotates the band', () => {
+  assert.equal(MIRROR_STREAM_LATENCY, 8192);
+  const rate = 48000, length = rate * 3;
+  const content = [noise(length, 21), noise(length, 22)];
+  // What the desktop uploads: mirrored, anchored at the content start, shifted early by the latency.
+  const mirrored = content.map((c) => c.slice());
+  mirrorAudioSpectrum(mirrored);
+  const upload = mirrored.map((c) => { const out = new Float32Array(length + MIRROR_STREAM_LATENCY); out.set(c); return out; });
+  const run = (anchor, slice) => {
+    const stream = createMirrorStream(2, { anchor });
+    assert.equal(stream.latency, MIRROR_STREAM_LATENCY);
+    const output = upload.map((c) => new Float32Array(c.length));
+    for (let at = 0; at < upload[0].length; at += slice) {
+      stream.process(upload.map((c) => c.subarray(at, at + slice)), output.map((c) => c.subarray(at, at + slice)));
+    }
+    return output.map((c) => c.subarray(MIRROR_STREAM_LATENCY));
+  };
+  const restored = run(0, 128);
+  for (const [index, original] of content.entries()) assert.ok(snrDb(original, restored[index]) > 25, `channel ${index}`);
+  const other = run(0, 1000);
+  for (const [index, data] of other.entries()) assert.deepEqual(data, restored[index], 'slicing must not change the output');
+  // A wrong anchor: a constant phase rotation, so the energy per band is unchanged.
+  const rotated = run(3000, 128);
+  const energy = (x) => x.reduce((sum, v) => sum + v * v, 0);
+  assert.ok(snrDb(content[0], rotated[0]) < 5, 'the waveform is rotated');
+  assert.ok(Math.abs(energy(rotated[0]) / energy(content[0]) - 1) < 0.02, 'but not attenuated');
+  // reset() forgets the buffered history: the next latency worth of output is silence.
+  const stream = createMirrorStream(1);
+  const out = new Float32Array(20000);
+  stream.process([noise(20000, 23)], [out]);
+  stream.reset();
+  stream.process([noise(20000, 24)], [out]);
+  assert.ok(out.subarray(0, MIRROR_STREAM_LATENCY).every((v) => v === 0));
+  assert.ok(out.subarray(MIRROR_STREAM_LATENCY).some((v) => v !== 0));
+  assert.throws(() => createMirrorStream(2, { size: 3000 }), /2048/);
 });
 
 test('the sync chirp matches veilcast_core and pins the content start through an offset', () => {
