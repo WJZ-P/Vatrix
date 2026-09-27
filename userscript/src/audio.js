@@ -228,7 +228,7 @@ function silence(video, trace = () => {}) {
  * element. destroy() additionally cancels work and releases the cached URL.
  */
 export function createAudioRestorer({ video, blockMs, mirror = false, introSeconds = 1, host, locate, report, findAudioGrid, findAudioSync,
-  reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav, mirrorLead = 8192, trace = () => {} }) {
+  reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav, mirrorLead = 8192, trebleCut = 9700, trace = () => {} }) {
   const abort = new AbortController();
   const audio = document.createElement('audio');
   audio.dataset.veilcastAudio = '';
@@ -403,7 +403,7 @@ export function createAudioRestorer({ video, blockMs, mirror = false, introSecon
       if (blockMs === 0) {
         // Mirror only, the track running `mirrorLead` samples early: anchor there, then delay it back.
         const start = nominal - mirrorLead;
-        await mirrorAudioSpectrumAsync(channels, { anchor: start, signal: abort.signal });
+        await mirrorAudioSpectrumAsync(channels, { anchor: start, signal: abort.signal, cutoffHz: trebleCut });
         if (destroyed) return;
         for (const data of channels) data.fill(0, 0, Math.max(0, start));
         finish(encodeWav(channels, AUDIO_RATE, { offset: -mirrorLead }), '音频已还原 · 频谱翻转', { channels: decoded.numberOfChannels, mirror });
@@ -416,7 +416,7 @@ export function createAudioRestorer({ video, blockMs, mirror = false, introSecon
       const start = grid.confidence >= 2 ? grid.start : nominal;
       const block = Math.round((AUDIO_RATE * blockMs) / 1000);
       // Undone in the opposite order: the mirror ran after the reversal, anchored at the content start.
-      if (mirror) await mirrorAudioSpectrumAsync(channels, { anchor: start, signal: abort.signal });
+      if (mirror) await mirrorAudioSpectrumAsync(channels, { anchor: start, signal: abort.signal, cutoffHz: trebleCut });
       if (destroyed) return;
       reverseAudioBlocks(channels, { sampleRate: AUDIO_RATE, blockMs, start: ((start % block) + block) % block });
       // The intro second (QR picture, sync chirp) stays silent.
