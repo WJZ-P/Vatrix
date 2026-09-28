@@ -4,12 +4,12 @@
   "tile": 40,
   "margin": 0,
   "seed": "20040821",
-  "invert": false,
+  "invert": true,
   "outputDir": "",
   "intro": true,
-  "seedInIntro": false,
+  "seedInIntro": true,
   "gpu": true,
-  "audio": false,
+  "audio": true,
   "audioMs": 0,
   "autoIntro": true
 }

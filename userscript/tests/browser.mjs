@@ -54,7 +54,7 @@ try {
   assert(document.querySelector('.video-toolbar-left-main').nextElementSibling.id === 'vatrix-userscript-ui', 'button immediately after share group');
   assert(!document.querySelector('.bpx-player-primary-area #vatrix-userscript-ui'), 'no settings UI covering the player');
   assert(!isEnabled() && restored().style.visibility === 'hidden', 'must start disabled');
-  assert(!panel().querySelector('[name=invert]').checked, 'legacy defaults keep inversion off');
+  assert(panel().querySelector('[name=invert]').checked, 'defaults follow the desktop, where inversion is on');
   for (const [name, value] of Object.entries({ seed: '20040821', tile: '40', margin: '0', width: '720', height: '1280' })) {
     assert(panel().querySelector(`[name=${name}]`).value === value, `default ${name}`);
   }

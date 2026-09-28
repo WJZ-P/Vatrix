@@ -12,7 +12,7 @@ const defaults = userscriptDefaults(JSON.parse(await readFile(new URL('../../app
 
 test('defaults come from the same JSON as the Tauri app', async () => {
   const params = validateSettings({}, defaults);
-  assert.deepEqual(params, { width: 720, height: 1280, tile: 40, margin: 0, seed: '20040821', invert: false, autoIntro: true, audioMs: 0, audioMirror: false });
+  assert.deepEqual(params, { width: 720, height: 1280, tile: 40, margin: 0, seed: '20040821', invert: true, autoIntro: true, audioMs: 0, audioMirror: true });
   const app = await readFile(new URL('../../app/src/App.tsx', import.meta.url), 'utf8');
   assert.match(app, /import defaultSettings from "\.\/default-settings\.json"/);
 });
@@ -54,7 +54,7 @@ test('page identity changes for a new video or part, not a quality setting', () 
 test('explicit description import matches the supplied video parameters', () => {
   const text = '原始宽2560，高1370 tile 16 margin 4 seed 20260916\n混淆前6M，混淆后60M，解码后19M';
   assert.deepEqual(validateSettings(descriptionSettings(text), defaults), {
-    width: 2560, height: 1370, tile: 16, margin: 4, seed: '20260916', invert: false, autoIntro: true, audioMs: 0, audioMirror: false,
+    width: 2560, height: 1370, tile: 16, margin: 4, seed: '20260916', invert: false, autoIntro: true, audioMs: 0, audioMirror: true,
   });
   assert.equal(descriptionSettings('原始宽度: 720 高度：1280 tail=40 margin=0 seed=+007').seed, '+007');
 });
