@@ -7,9 +7,9 @@ Rust 壳在 `src-tauri/`，是根 workspace 的成员，通过 path 依赖 `vatr
 
 ```text
 npm install          # 首次
-npm run tauri dev    # 开发：起 Vite（5173）并打开窗口，前后端都热更新
+npm run tauri        # 开发：起 Vite（5173）并打开窗口，前后端都热更新（即 tauri dev）
 npm run build        # 只构建前端到 dist/（tsc + vite）
-npm run tauri build  # 打包安装程序
+npx tauri build      # 打包安装程序
 ```
 
 在仓库根目录 `cargo build -p vatrix-app` / `cargo clippy --workspace` 也能编译壳。
