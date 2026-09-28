@@ -25,8 +25,19 @@ npx tauri build      # 打包安装程序
 
 拖入或选择一个视频 → 调 tile / margin / seed / 反色 → 选输出目录（留空放在视频旁边）→ 加密或解密。
 默认 tile 40、margin 0：上传尺寸等于原尺寸，平台按原档位处理，观众看到完整分辨率；代价是 tile 边缘有淡淡接缝。
-每一步都有反馈：探测到的分辨率、帧率、时长；参数是否合法及打乱后的上传尺寸；逐帧进度；
-完成后输入和输出各一张中间帧的快照，方便对比不同参数的效果。
+每一步都有反馈：探测到的分辨率、帧率、时长；参数是否合法及打乱后的上传尺寸；逐帧进度。
+预览下方的时间轴可以拖到任意一秒看那一帧（ffmpeg 截帧，拖动时只取最新位置，不排队）。
+加密或解密进行中，预览变成上下对照：上面是当前读入的帧，下面是刚写出的帧，后端每约 100 ms 推一对
+480 px 的 RGBA 小图（二进制 Channel，见 `src-tauri/src/preview.rs`）；竖屏视频改为左右排列，两张图更大。
+完成后同一时间轴同时拖动输入和输出（输出自动按片头的 1 秒对齐）。
+
+界面：窗口不用系统边框，标题栏由应用自己绘制（拖动、双击最大化、最小化 / 最大化 / 关闭，需要
+`capabilities/default.json` 里的 `core:window:allow-minimize` 等四项权限）。左栏是视频（空时整栏都是拖放区），
+右栏是一张"编码参数"卡片：tile、margin、seed 和逐行排列的开关，开关**默认全开**；原始尺寸只取自文件，不可改。
+底栏是输出位置、进度与结果和两个操作按钮。背景是一层缓慢上飘的像素小方块（约 30 fps，窗口隐藏时暂停，
+系统要求减少动效时静止）；按钮、开关、进度条都有过渡动画。风格几乎不用圆角（2–4 px），开关是方形的"像素"。
+颜色、圆角、间距、缓动都是 `src/global.css` 里的 CSS 变量，取自图标的深蓝底和青蓝色带；组件只引用变量。
+设置保存在 localStorage 的 `vatrix.settings.v2`（默认值改为全开时换了键，旧键里的值不再读取）。
 
 - **任意尺寸都能处理**：宽高不是 tile 的整数倍时，打乱前把右边和下边补到整数倍（复制边缘像素，不是黑边），
   解密后裁回原尺寸。1920×1078 + tile 40 → 补 2 行按 1920×1080 处理。核心库本身仍要求整除，补边只在应用层。
@@ -72,11 +83,13 @@ ffmpeg 的查找顺序：`VATRIX_FFMPEG_DIR` → 可执行文件旁边 → 开�
 ## 结构
 
 - `src/App.tsx` — 状态与流程
-- `src/components/DropZone.tsx` — Tauri 原生拖放 + 文件对话框
-- `src/components/PlanPanel.tsx` — 尺寸 / tile / margin / seed / 反色与上传尺寸预览
-- `src/components/JobPanel.tsx` — 输出目录、加密 / 解密按钮、进度、结果
-- `src/components/Snapshots.tsx` — 输入 / 输出快照
-- `src/components/ui.tsx` — 共用的 Linaria 基础组件
+- `src/global.css` — 设计变量（颜色、圆角、字体）与全局基础样式
+- `src/components/TitleBar.tsx` — 自绘标题栏与窗口按钮
+- `src/components/SourcePanel.tsx` — 拖放区、文件信息、可拖动时间轴与输入 / 输出对照（Tauri 原生拖放 + 文件对话框）
+- `src/components/PixelField.tsx` — 背景的像素动画
+- `src/components/PlanPanel.tsx` — "编码参数"卡片：tile / margin / seed、各开关与分块预览
+- `src/components/ActionBar.tsx` — 输出位置、进度与结果、加密 / 解密按钮
+- `src/components/ui.tsx` — 共用的 Linaria 基础组件：卡片、输入框、步进器、开关、按钮、徽章、进度条
 - `src/ipc.ts` — Tauri 命令的类型化封装
 - `src-tauri/src/lib.rs` — 命令：`plan_preview`、`initial_file`、`probe_video`、`snapshot`、`run_job`（进度走 `Channel`）
 - `src-tauri/src/ffmpeg.rs` — ffmpeg 子进程：探测、截帧、解码 → 核心库 → 编码的管道

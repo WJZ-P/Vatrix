@@ -73,7 +73,7 @@ test('the app favicon and title use the same icon as the script toolbar', async 
   const icon = await read('app/src-tauri/icons/64x64.png');
   assert.deepEqual(await read('app/public/icon.png'), icon);
   assert.match((await read('app/index.html')).toString(), /rel="icon"[^>]+href="\/icon\.png"/);
-  assert.match((await read('app/src/App.tsx')).toString(), /<img src="\/icon\.png"/);
+  assert.match((await read('app/src/components/TitleBar.tsx')).toString(), /<img src="\/icon\.png"/);
 });
 
 test('userscript metadata and toolbar embed the generated PNGs without a remote URL', async () => {

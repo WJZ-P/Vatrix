@@ -13,8 +13,12 @@
     "windows": [
       {
         "title": "Vatrix",
-        "width": 960,
-        "height": 640
+        "width": 1120,
+        "height": 740,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "decorations": false
       }
     ],
     "security": {

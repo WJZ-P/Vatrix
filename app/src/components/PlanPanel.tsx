@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { styled } from "@linaria/react";
 
 import { type EncoderInfo, type PlanPreview, hardwareEncoder, planPreview } from "../ipc";
-import { Field, Note, Panel, Row } from "./ui";
+import { Badge, Card, CardTitle, Field, Input, Label, Note, Row, Stepper, Switch } from "./ui";
 
 export interface PlanSettings {
+  /** The source size, always taken from the loaded file. */
   width: number;
   height: number;
   tile: number;
@@ -25,26 +27,59 @@ export interface PlanSettings {
 interface Props {
   settings: PlanSettings;
   onChange: (settings: PlanSettings) => void;
-  /** Whether width/height came from the file rather than the user. */
-  sizeFromFile: boolean;
+  /** The grid only means something once a file supplies the size. */
+  hasFile: boolean;
 }
 
-function describe(preview: PlanPreview): string {
+/** The grid the settings produce, as validated by the core crate. */
+const Summary = styled.div`
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--accent);
+  background: rgba(24, 34, 58, 0.7);
+  animation: vx-fade 240ms var(--ease);
+
+  b {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--text-3);
+  }
+`;
+
+function PlanSummary({ preview, error, hasFile }: { preview: PlanPreview | null; error: string | null; hasFile: boolean }) {
+  if (!hasFile) return <Note data-tone="muted">载入视频后，按它的尺寸计算分块。</Note>;
+  if (error) return <Note data-tone="error">{error}</Note>;
+  if (!preview) return null;
   const { work } = preview;
-  const padding =
-    work.pad_right || work.pad_bottom
-      ? `右补 ${work.pad_right}、下补 ${work.pad_bottom} 像素 → ${work.width} × ${work.height}，`
-      : "";
-  return `${padding}${preview.columns} × ${preview.rows} = ${preview.tile_count} 个 tile，上传尺寸 ${preview.upload_width} × ${preview.upload_height}`;
+  const padded = work.pad_right || work.pad_bottom;
+  return (
+    <Summary key={`${preview.tile_count}-${preview.upload_width}`}>
+      <b>{preview.tile_count.toLocaleString()}</b>
+      <span>
+        块 · {preview.columns} × {preview.rows} · 上传 {preview.upload_width} × {preview.upload_height}
+        {padded ? ` · 补边 ${work.pad_right} / ${work.pad_bottom}` : ""}
+      </span>
+    </Summary>
+  );
 }
 
-/** Tile/margin/seed with the resulting upload size, validated by the core crate. */
-export function PlanPanel({ settings, onChange, sizeFromFile }: Props) {
+/** Every setting that decides how a video is scrambled, in one list. */
+export function PlanPanel({ settings, onChange, hasFile }: Props) {
   const [preview, setPreview] = useState<PlanPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   // undefined while detecting, null when no hardware encoder initialises.
   const [encoder, setEncoder] = useState<EncoderInfo | null | undefined>(undefined);
   const { width, height, tile, margin } = settings;
+  const set = (patch: Partial<PlanSettings>) => onChange({ ...settings, ...patch });
 
   useEffect(() => {
     let cancelled = false;
@@ -78,91 +113,76 @@ export function PlanPanel({ settings, onChange, sizeFromFile }: Props) {
     };
   }, [width, height, tile, margin]);
 
-  const number = (name: "width" | "height" | "tile" | "margin", label: string, step = 1) => (
-    <Field>
-      {label}
-      <input
-        type="number"
-        min={0}
-        step={step}
-        value={settings[name]}
-        onChange={(e) => onChange({ ...settings, [name]: Number(e.currentTarget.value) })}
-      />
-    </Field>
-  );
-
   return (
-    <Panel>
+    <Card>
+      <CardTitle>编码参数</CardTitle>
       <Row>
-        {number("width", sizeFromFile ? "原始宽度（来自文件）" : "原始宽度")}
-        {number("height", sizeFromFile ? "原始高度（来自文件）" : "原始高度")}
-        {number("tile", "tile（偶数）", 2)}
-        {number("margin", "margin（偶数）", 2)}
-        <Field>
-          seed（数字或任意文字）
-          <input
-            type="text"
-            value={settings.seed}
-            onChange={(e) => onChange({ ...settings, seed: e.currentTarget.value })}
-          />
+        <Field as="div">
+          <Label>tile（偶数）</Label>
+          <Stepper label="tile" value={tile} step={2} min={2} onChange={(value) => set({ tile: value })} />
+        </Field>
+        <Field as="div">
+          <Label>margin（偶数）</Label>
+          <Stepper label="margin" value={margin} step={2} onChange={(value) => set({ margin: value })} />
         </Field>
       </Row>
-      <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <input
-          type="checkbox"
+      <PlanSummary preview={preview} error={error} hasFile={hasFile} />
+      <Field>
+        <Label>seed（数字或任意文字）</Label>
+        <Input type="text" spellCheck={false} value={settings.seed} onChange={(e) => set({ seed: e.currentTarget.value })} />
+      </Field>
+
+      <div>
+        <Switch
+          title="反色"
+          description="加密与还原两端需要保持一致"
           checked={settings.invert}
-          onChange={(e) => onChange({ ...settings, invert: e.currentTarget.checked })}
+          onChange={(invert) => set({ invert })}
         />
-        反色（加密与还原两端需保持一致）
-      </label>
-      <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <input
-          type="checkbox"
+        <Switch
+          title="片头二维码"
+          description="开头 1 秒写入参数，观众端自动识别；解密时自动跳过"
           checked={settings.intro}
-          onChange={(e) => onChange({ ...settings, intro: e.currentTarget.checked })}
+          onChange={(intro) => set({ intro })}
         />
-        片头二维码（1 秒，写入尺寸、tile、margin、反色；解密时跳过）
-      </label>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, opacity: settings.intro ? 1 : 0.5 }}>
-        <input
-          type="checkbox"
+        <Switch
+          nested
+          title="把 seed 也写进二维码"
+          description="任何装了脚本的人都能直接观看"
           checked={settings.seedInIntro}
           disabled={!settings.intro}
-          onChange={(e) => onChange({ ...settings, seedInIntro: e.currentTarget.checked })}
+          onChange={(seedInIntro) => set({ seedInIntro })}
         />
-        把 seed 也写进二维码（任何人装了脚本都能观看）
-      </label>
-      <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <input
-          type="checkbox"
+        <Switch
+          title="音频频谱翻转"
+          description="164 Hz–10 kHz 上下颠倒，听不出音色和性别；观众端实时还原"
           checked={settings.audio}
-          onChange={(e) => onChange({ ...settings, audio: e.currentTarget.checked })}
+          onChange={(audio) => set({ audio })}
         />
-        音频加扰：频谱翻转（164 Hz–10 kHz 上下颠倒，听不出音色和性别；脚本实时还原）
-      </label>
+        <Switch
+          title={
+            <>
+              显卡编码{" "}
+              {encoder === undefined ? (
+                <Badge>检测中…</Badge>
+              ) : encoder ? (
+                <Badge data-tone="success">{encoder.label}</Badge>
+              ) : (
+                <Badge>仅 CPU</Badge>
+              )}
+            </>
+          }
+          description={encoder ? `使用 ${encoder.codec}，失败时自动回退 CPU` : "未检测到可用的显卡编码器，将使用 CPU（libx264）"}
+          checked={settings.gpu}
+          disabled={encoder === null}
+          onChange={(gpu) => set({ gpu })}
+        />
+      </div>
       {settings.audioMs > 0 && (
-        <Note>
+        <Note data-tone="muted">
           旧版文件：音频还做了 {settings.audioMs} ms 分块倒放{settings.audio ? "和频谱翻转" : ""}，解密时一并还原。
         </Note>
       )}
-      <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <input
-          type="checkbox"
-          checked={settings.gpu}
-          onChange={(e) => onChange({ ...settings, gpu: e.currentTarget.checked })}
-        />
-        尝试用显卡编码（NVENC / AMF / Quick Sync，不可用时自动回退 CPU）
-        <span style={{ color: "#8f8fa3", fontSize: 12 }}>
-          {encoder === undefined
-            ? "检测中…"
-            : encoder
-              ? `检测到 ${encoder.label}（${encoder.codec}）`
-              : "未检测到可用的显卡编码器，将使用 CPU（libx264）"}
-        </span>
-      </label>
-      <Note tone={error ? "error" : undefined}>
-        {error ? error : preview ? describe(preview) : "…"}
-      </Note>
-    </Panel>
+    </Card>
   );
 }
