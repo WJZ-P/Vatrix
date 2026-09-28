@@ -4,9 +4,10 @@
 
 pub mod ffmpeg;
 pub mod intro;
+pub mod preview;
 
 use serde::Serialize;
-use tauri::ipc::{Channel, Response};
+use tauri::ipc::{Channel, InvokeResponseBody, Response};
 use vatrix_core::{Yuv420Layout, Yuv420Plan, seeded_permutation};
 
 use ffmpeg::{JobParams, JobResult, Progress, Tools, VideoInfo, WorkSize};
@@ -101,11 +102,23 @@ fn initial_file() -> Option<String> {
 /// Scrambles or restores one file. Progress arrives on `on_progress` while
 /// the job runs on a blocking thread; the result is the output path.
 #[tauri::command]
-async fn run_job(params: JobParams, on_progress: Channel<Progress>) -> Result<JobResult, String> {
+async fn run_job(
+    params: JobParams,
+    on_progress: Channel<Progress>,
+    on_preview: Channel<InvokeResponseBody>,
+) -> Result<JobResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        ffmpeg::run_job(&Tools::locate()?, &params, |progress| {
-            let _ = on_progress.send(progress);
-        })
+        ffmpeg::run_job_with_preview(
+            &Tools::locate()?,
+            &params,
+            |progress| {
+                let _ = on_progress.send(progress);
+            },
+            // Raw bytes: about a megabyte ten times a second, too much for JSON.
+            |pictures| {
+                let _ = on_preview.send(InvokeResponseBody::Raw(pictures));
+            },
+        )
     })
     .await
     .map_err(|e| e.to_string())?

@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStderr, Command, Stdio};
 use std::sync::OnceLock;
 use std::thread;
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use vatrix_core::{
@@ -15,7 +16,10 @@ use vatrix_core::{
     seeded_permutation, sync_chirp,
 };
 
-use crate::intro;
+use crate::{intro, preview};
+
+/// How often a running job hands the UI a preview of its current frames.
+const PREVIEW_INTERVAL: Duration = Duration::from_millis(100);
 
 /// Tag written into scrambled files so restore can prefill the geometry.
 /// The seed is deliberately not included.
@@ -883,7 +887,18 @@ fn f32_to_pcm(samples: &[f32]) -> impl Iterator<Item = u8> + '_ {
 pub fn run_job(
     tools: &Tools,
     params: &JobParams,
+    on_progress: impl FnMut(Progress),
+) -> Result<JobResult, String> {
+    run_job_with_preview(tools, params, on_progress, |_| {})
+}
+
+/// [`run_job`], also handing `on_preview` a [`preview::pair`] of the input and
+/// output frames about every [`PREVIEW_INTERVAL`].
+pub fn run_job_with_preview(
+    tools: &Tools,
+    params: &JobParams,
     mut on_progress: impl FnMut(Progress),
+    mut on_preview: impl FnMut(Vec<u8>),
 ) -> Result<JobResult, String> {
     let info = probe(tools, &params.input)?;
     if params.invert
@@ -1106,6 +1121,7 @@ pub fn run_job(
     let total = info.frames.max(1);
     let mut done = 0u64;
     let mut skipped = 0u64;
+    let mut last_preview: Option<Instant> = None;
     let pump = (|| -> Result<(), String> {
         if let Some(frame) = &intro_frame {
             for _ in 0..intro_frames {
@@ -1141,6 +1157,10 @@ pub fn run_job(
             frames_out
                 .write_all(&output)
                 .map_err(|e| format!("写入编码器失败: {e}"))?;
+            if last_preview.is_none_or(|at| at.elapsed() >= PREVIEW_INTERVAL) {
+                last_preview = Some(Instant::now());
+                on_preview(preview::pair((in_layout, &input), (out_layout, &output))?);
+            }
             done += 1;
             if done.is_multiple_of(10) || done == total {
                 on_progress(Progress {

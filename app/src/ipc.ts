@@ -126,11 +126,37 @@ export function probeVideo(path: string): Promise<VideoInfo> {
   return invoke<VideoInfo>("probe_video", { path });
 }
 
-/** Runs one scramble/restore job; `onProgress` fires from the worker thread as frames go by. */
-export function runJob(params: JobParams, onProgress: (progress: Progress) => void): Promise<JobResult> {
-  const channel = new Channel<Progress>();
-  channel.onmessage = onProgress;
-  return invoke<JobResult>("run_job", { params, onProgress: channel });
+/** The frame a running job last read and the frame it wrote for it, downscaled. */
+export interface FramePair {
+  input: ImageData;
+  output: ImageData;
+}
+
+/** Wire format from src-tauri/src/preview.rs: four u16 sizes, then two RGBA blocks. */
+function parseFramePair(buffer: ArrayBuffer): FramePair {
+  const view = new DataView(buffer);
+  const [inWidth, inHeight, outWidth, outHeight] = [0, 2, 4, 6].map((at) => view.getUint16(at, true));
+  const inBytes = inWidth * inHeight * 4;
+  return {
+    input: new ImageData(new Uint8ClampedArray(buffer, 8, inBytes), inWidth, inHeight),
+    output: new ImageData(new Uint8ClampedArray(buffer, 8 + inBytes, outWidth * outHeight * 4), outWidth, outHeight),
+  };
+}
+
+/**
+ * Runs one scramble/restore job; `onProgress` fires from the worker thread as
+ * frames go by, and `onPreview` about ten times a second with the current pair.
+ */
+export function runJob(
+  params: JobParams,
+  onProgress: (progress: Progress) => void,
+  onPreview: (pair: FramePair) => void = () => {},
+): Promise<JobResult> {
+  const progress = new Channel<Progress>();
+  progress.onmessage = onProgress;
+  const preview = new Channel<ArrayBuffer>();
+  preview.onmessage = (buffer) => onPreview(parseFramePair(buffer));
+  return invoke<JobResult>("run_job", { params, onProgress: progress, onPreview: preview });
 }
 
 /** A blob URL for one frame of `path`; revoke it when done. */
