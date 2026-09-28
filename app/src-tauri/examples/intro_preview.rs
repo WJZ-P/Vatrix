@@ -1,11 +1,11 @@
 //! Renders the intro frame at the given sizes as PNG, for checking the layout:
-//!   cargo run -p veilcast-app --example intro_preview -- 2560x1376 720x1280
+//!   cargo run -p vatrix-app --example intro_preview -- 2560x1376 720x1280
 //! Files land in `target/intro-preview/`; needs ffmpeg as the app does.
 
 use std::process::{Command, Stdio};
 
-use veilcast_app_lib::intro::render_frame;
-use veilcast_core::{IntroHeader, Yuv420Layout};
+use vatrix_app_lib::intro::render_frame;
+use vatrix_core::{IntroHeader, Yuv420Layout};
 
 fn main() {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/intro-preview");

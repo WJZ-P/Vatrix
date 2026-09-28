@@ -35,7 +35,7 @@ if ((Test-Path $TargetExe) -and -not $Force) {
     exit 0
 }
 
-$WorkDir = Join-Path ([System.IO.Path]::GetTempPath()) ('veilcast-ffmpeg-' + [System.Guid]::NewGuid().ToString('N'))
+$WorkDir = Join-Path ([System.IO.Path]::GetTempPath()) ('vatrix-ffmpeg-' + [System.Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $WorkDir | Out-Null
 
 try {

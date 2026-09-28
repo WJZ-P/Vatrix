@@ -34,7 +34,7 @@ enum Cut {
 // A 16384-point STFT (2.93 Hz bins at 48 kHz) with sqrt-Hann windows at half
 // overlap. Bins LOW..=HIGH (164 Hz–10 kHz) swap with CENTER - k. Long frames
 // keep the band edges sharp; with 2048 points the edges leak enough to cost
-// ~15 dB of round-trip SNR. `viewer/veilcast.js` uses the same constants.
+// ~15 dB of round-trip SNR. `viewer/vatrix.js` uses the same constants.
 const SIZE: usize = 16_384;
 const HOP: usize = SIZE / 2;
 const LOW: usize = 56;

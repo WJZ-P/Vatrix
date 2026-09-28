@@ -50,7 +50,7 @@ pub const SYNC_CHIRP_LEAD: usize = 36_000;
 /// Mirrored audio hides the block grid from blind search (the energy near
 /// 10 kHz makes every sample step large, and a lossy codec buries the jumps),
 /// so a viewer cross-correlates this instead: it pins the content start to
-/// the sample through AAC at 64 kbit/s. `viewer/veilcast.js` has the same formula.
+/// the sample through AAC at 64 kbit/s. `viewer/vatrix.js` has the same formula.
 pub fn sync_chirp() -> Vec<f32> {
     const LENGTH: usize = 24_000;
     const FADE: f64 = 480.0;

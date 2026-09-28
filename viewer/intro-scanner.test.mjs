@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { scanIntro } from './veilcast.js';
+import { scanIntro } from './vatrix.js';
 
 const digits = '0125601370040001025073';
 
@@ -108,19 +108,19 @@ test('progress distinguishes readable pixels, QR detection and a valid header wi
   const r = setup(t);
   r.video.readyState = 2;
   const events = [];
-  const payload = '012560137004000102500985959262365026294691';
+  const payload = '012560137004000102500699287586704298490792';
   await scanIntro(r.video, { decode: () => payload, onProgress: (event, details) => events.push({ event, details }) });
   for (const event of ['begin', 'frame-read', 'qr-detected', 'header-valid', 'stop']) assert.ok(events.some((entry) => entry.event === event), event);
   assert.equal(events.at(-1).details.reason, 'found');
   assert.ok(!JSON.stringify(events).includes(payload));
-  assert.ok(!JSON.stringify(events).includes('9859592623650262946'));
+  assert.ok(!JSON.stringify(events).includes('6992875867042984907'));
 });
 
 test('timeout diagnostics distinguish missing QR from an invalid header', async (t) => {
   const r = setup(t);
   r.video.readyState = 2;
   const events = [];
-  const scan = scanIntro(r.video, { decode: () => 'not-a-veilcast-header', onProgress: (event, details) => events.push({ event, details }) });
+  const scan = scanIntro(r.video, { decode: () => 'not-a-vatrix-header', onProgress: (event, details) => events.push({ event, details }) });
   t.mock.timers.tick(5000);
   await scan;
   assert.ok(events.some((entry) => entry.event === 'header-rejected'));

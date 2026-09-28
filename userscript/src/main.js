@@ -2,10 +2,10 @@
 export function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroReader, audio, defaults, validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings, storage, menu, iconUrl, diagnostics, introVideoState, scriptVersion = 'unknown' }) {
   const SELECTOR = '.bpx-player-primary-area video';
   const TOOLBAR_SELECTOR = '#arc_toolbar_report .video-toolbar-left-main';
-  const STORAGE_KEY = 'veilcast.bilibili.settings.v1';
+  const STORAGE_KEY = 'vatrix.bilibili.settings.v1';
   // Per-video memory, keyed by BVID and part: what the intro QR said, plus
   // whatever the viewer corrected by hand on that page.
-  const PAGES_KEY = 'veilcast.bilibili.pages.v1';
+  const PAGES_KEY = 'vatrix.bilibili.pages.v1';
   const log = (event, details = {}, level = 'info') => diagnostics?.log(event, details, level);
   const mediaState = (video) => introVideoState?.(video) ?? { currentTime: video.currentTime, readyState: video.readyState };
   let mountSequence = 0;
@@ -82,13 +82,13 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     }
 
     const canvas = document.createElement('canvas');
-    canvas.dataset.veilcastRestored = '';
+    canvas.dataset.vatrixRestored = '';
     canvas.setAttribute('aria-hidden', 'true');
     // Stay inside the video layer: danmaku and player controls remain above us.
     canvas.style.cssText = 'position:absolute;pointer-events:none;z-index:1;background:#000;object-fit:contain;visibility:hidden;';
     wrapper.append(canvas);
     const ui = document.createElement('div');
-    ui.id = 'veilcast-userscript-ui';
+    ui.id = 'vatrix-userscript-ui';
     ui.style.cssText = 'display:inline-flex;align-items:center;position:relative;flex-shrink:0;margin-left:16px;pointer-events:auto;';
     const shadow = ui.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
@@ -130,11 +130,11 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
       </style>
       <button id="open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="panel">
         <img id="brand-icon" width="20" height="20" alt="" aria-hidden="true" draggable="false">
-        <span id="button-label">VeilCast · 关</span>
+        <span id="button-label">Vatrix · 关</span>
       </button>
       <dialog id="panel" aria-labelledby="panel-title">
       <form>
-        <header><strong id="panel-title">VeilCast · 画面还原 <span id="build-version"></span></strong><button id="close" type="button" aria-label="关闭设置">关闭</button></header>
+        <header><strong id="panel-title">Vatrix · 画面还原 <span id="build-version"></span></strong><button id="close" type="button" aria-label="关闭设置">关闭</button></header>
         <label>seed（数字或文字）<input name="seed" type="text" maxlength="4096" autocomplete="off" spellcheck="false"></label>
         <div class="row">
           <label>tile / tail（偶数）<input name="tile" type="number" min="2" max="16384" step="2" required></label>
@@ -158,7 +158,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
         <button id="copy-diagnostics" type="button">复制诊断日志</button>
         <p id="log-status" role="status" aria-live="polite"></p>
         <details id="log-details"><summary>查看诊断日志（本地，已脱敏）</summary>
-          <textarea id="diagnostic-log" readonly spellcheck="false" aria-label="VeilCast 诊断日志"></textarea>
+          <textarea id="diagnostic-log" readonly spellcheck="false" aria-label="Vatrix 诊断日志"></textarea>
         </details>
         <small>勾选频谱翻转或倒放块长大于 0 时一并还原声音；弹幕和播放控制保留。</small>
       </form></dialog>`;
@@ -218,7 +218,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
       form.elements.namedItem('audioMirror').checked = values.audioMirror;
       form.elements.namedItem('autoIntro').checked = values.autoIntro;
     }
-    // The first second of a VeilCast upload is a QR code carrying the plan.
+    // The first second of a Vatrix upload is a QR code carrying the plan.
     // Read it while the playhead is still inside that window, then apply and
     // switch the restorer on: only our own header parses, so nothing happens
     // on ordinary videos.
@@ -342,7 +342,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     }
     function updateToggle() {
       toggle.textContent = enabled ? '停用还原' : '启用还原';
-      shadow.getElementById('button-label').textContent = enabled ? 'VeilCast · 开' : 'VeilCast · 关';
+      shadow.getElementById('button-label').textContent = enabled ? 'Vatrix · 开' : 'Vatrix · 关';
       ui.dataset.enabled = String(enabled);
     }
     function cancelFrame() {
@@ -491,7 +491,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     });
     const logDetails = shadow.getElementById('log-details');
     const logText = shadow.getElementById('diagnostic-log');
-    const readLogs = () => diagnostics?.dump() ?? `VeilCast ${scriptVersion}: 诊断组件未加载，请检查控制台。`;
+    const readLogs = () => diagnostics?.dump() ?? `Vatrix ${scriptVersion}: 诊断组件未加载，请检查控制台。`;
     on(logDetails, 'toggle', () => { if (logDetails.open) logText.value = readLogs(); });
     on(shadow.getElementById('copy-diagnostics'), 'click', async () => {
       log('diagnostics.copy', { mountId });
@@ -644,7 +644,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
   // URL changes from history.pushState have no native event. Also recover when
   // a preloaded player becomes visible without replacing its video node.
   const timer = setInterval(queueScan, 1000);
-  const menuId = menu.register('VeilCast：还原参数', () => { scan(); active?.open(); });
+  const menuId = menu.register('Vatrix：还原参数', () => { scan(); active?.open(); });
   const lifetime = new AbortController();
   window.addEventListener('pageshow', queueScan, { signal: lifetime.signal });
   window.addEventListener('pagehide', (event) => { if (!event.persisted) dispose(); }, { signal: lifetime.signal });

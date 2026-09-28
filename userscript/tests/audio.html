@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <meta charset="utf-8">
-<title>VeilCast real-time audio restoration check</title>
+<title>Vatrix real-time audio restoration check</title>
 <style>
   body { background: #111827; color: #e5e7eb; font: 14px/1.5 system-ui,sans-serif; margin: 24px; }
   .bpx-player-primary-area { position: relative; width: 360px; height: 640px; background: #000; }
@@ -14,7 +14,7 @@
   li { margin: 2px 0; }
 </style>
 <h1>音频频谱翻转：浏览器实时还原</h1>
-<p>先跑 <code>cargo test -p veilcast-app --test audio_pipeline</code>：它把只做频谱翻转（音轨提前 8192 样本）的加密文件再按 AAC 64k 转一遍，
+<p>先跑 <code>cargo test -p vatrix-app --test audio_pipeline</code>：它把只做频谱翻转（音轨提前 8192 样本）的加密文件再按 AAC 64k 转一遍，
    生成 <code>platform.mp4</code>（元数据已抹）和 B 站式的纯音频分片 <code>platform.m4s</code>。
    第一部分直接用实时流式翻转还原两者；第二部分检验油猴脚本读到片头后把视频自己的声音接入 AudioWorklet 实时还原，
    以及音量、暂停、跳转、停用都照常工作。需要允许自动播放（无头浏览器加 <code>--autoplay-policy=no-user-gesture-required</code>）。</p>
@@ -27,22 +27,22 @@
 <ol id="steps"></ol>
 <p id="summary">测试运行中…</p>
 <script>
-  const saved = new Map([['veilcast.bilibili.settings.v1', { width: 100, height: 100, tile: 2, margin: 0, seed: 'wrong', invert: false, autoIntro: true, audioMs: 0 }]]);
+  const saved = new Map([['vatrix.bilibili.settings.v1', { width: 100, height: 100, tile: 2, margin: 0, seed: 'wrong', invert: false, autoIntro: true, audioMs: 0 }]]);
   window.GM_getValue = (key, fallback) => saved.get(key) ?? fallback;
   window.GM_setValue = (key, value) => saved.set(key, structuredClone(value));
   window.GM_registerMenuCommand = () => 1;
   window.GM_unregisterMenuCommand = () => {};
-  history.replaceState({}, '', '/video/veilcast-audio-fixture/');
+  history.replaceState({}, '', '/video/vatrix-audio-fixture/');
   // Keep the worklet nodes the script creates, so the page can listen to their output.
-  window.veilcastNodes = [];
+  window.vatrixNodes = [];
   const NativeWorkletNode = window.AudioWorkletNode;
   window.AudioWorkletNode = class extends NativeWorkletNode {
-    constructor(...args) { super(...args); window.veilcastNodes.push(this); }
+    constructor(...args) { super(...args); window.vatrixNodes.push(this); }
   };
 </script>
-<script src="/userscript/veilcast.user.js"></script>
+<script src="/userscript/vatrix.user.js"></script>
 <script type="module">
-  import { createMirrorStream, MIRROR_STREAM_LATENCY } from '/viewer/veilcast.js';
+  import { createMirrorStream, MIRROR_STREAM_LATENCY } from '/viewer/vatrix.js';
 
   const FIXTURES = '/target/tmp/audio-job-mirrored';
   const SOURCE = '/target/experiment/d49672a5defc39413b8979e3dfb5f134-yuv420p/source.mp4';
@@ -126,7 +126,7 @@
 
     // Part 2: the userscript reads the intro and routes the video's own sound through the worklet.
     const video = document.querySelector('video');
-    const ui = () => document.getElementById('veilcast-userscript-ui');
+    const ui = () => document.getElementById('vatrix-userscript-ui');
     const panel = () => ui()?.shadowRoot;
     await until(() => ui(), 'the panel to mount');
     video.src = `${FIXTURES}/platform.mp4`;
@@ -139,8 +139,8 @@
     assert(ui().dataset.audio === 'ready', `audio state ${ui().dataset.audio}: ${panel().getElementById('audio-status').textContent}`);
     assert(ui().dataset.audioMode === 'realtime', `audio mode ${ui().dataset.audioMode}`);
     assert(!video.muted, 'the player keeps its sound switched on');
-    assert(!panel().querySelector('audio[data-veilcast-audio]'), 'nothing is downloaded or played beside the video');
-    const node = window.veilcastNodes.at(-1);
+    assert(!panel().querySelector('audio[data-vatrix-audio]'), 'nothing is downloaded or played beside the video');
+    const node = window.vatrixNodes.at(-1);
     assert(node, 'an AudioWorkletNode carries the video sound');
     await sleep(600);
     const restoredSound = await listen(node);
@@ -183,7 +183,7 @@
     panel().getElementById('toggle').click();
     await until(() => ui().dataset.enabled === 'true' && ui().dataset.audioMode === 'realtime', 'restoration to switch on again');
     await sleep(600);
-    const again = await listen(window.veilcastNodes.at(-1));
+    const again = await listen(window.vatrixNodes.at(-1));
     assert(again.tilt > 10, `restored again, tilt ${again.tilt.toFixed(1)} dB`);
     pass(`停用后原声直接交还页面、实时还原退出信号链；再次启用立即恢复（低频比高频高 ${again.tilt.toFixed(1)} dB）`);
 

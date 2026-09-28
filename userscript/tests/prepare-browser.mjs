@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = new URL('../../', import.meta.url);
-const build = spawnSync('cargo', ['build', '-p', 'veilcast-core', '--example', 'raw_pipe', '--offline'], {
+const build = spawnSync('cargo', ['build', '-p', 'vatrix-core', '--example', 'raw_pipe', '--offline'], {
   cwd: fileURLToPath(root), stdio: 'inherit', windowsHide: true,
 });
 if (build.status !== 0) throw new Error('raw_pipe build failed');
@@ -41,8 +41,8 @@ await writeFile(new URL('fixture.json', folder), JSON.stringify({ params, workWi
 // Exercise the SAME Rust limited-range YUV inversion as Tauri, then use a
 // real H.264 video rather than a JS-negated canvas for browser verification.
 const exe = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
-let ffmpeg = process.env.VEILCAST_FFMPEG_DIR
-  ? join(process.env.VEILCAST_FFMPEG_DIR, exe)
+let ffmpeg = process.env.VATRIX_FFMPEG_DIR
+  ? join(process.env.VATRIX_FFMPEG_DIR, exe)
   : fileURLToPath(new URL(`tools/ffmpeg/${exe}`, root));
 try { await access(ffmpeg); } catch { ffmpeg = exe; }
 function run(program, args, input) {

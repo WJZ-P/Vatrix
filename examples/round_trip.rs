@@ -1,4 +1,4 @@
-use veilcast_core::{FrameLayout, PixelFormat, ShufflePlan};
+use vatrix_core::{FrameLayout, PixelFormat, ShufflePlan};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let layout = FrameLayout::new(8, 4, PixelFormat::Rgb24, 8 * 3)?;

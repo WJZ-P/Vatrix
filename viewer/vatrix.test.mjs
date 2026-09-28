@@ -8,9 +8,9 @@ import {
   createMirrorStream, encodeIntroHeader, encodeWav, findAudioGrid, findAudioSync, MIRROR_STREAM_LATENCY, MIRROR_TREBLE_CUT_HZ,
   mirrorAudioSpectrum, mirrorAudioSpectrumAsync,
   parseIntroHeader, planGeometry, reverseAudioBlocks, seedFromText, seededPermutation, SYNC_CHIRP_LEAD, syncChirp,
-} from './veilcast.js';
+} from './vatrix.js';
 
-test('known-answer vectors match veilcast_core', () => {
+test('known-answer vectors match vatrix_core', () => {
   assert.deepEqual(seededPermutation(16, 1), [2, 11, 10, 6, 7, 13, 14, 0, 12, 5, 15, 9, 3, 8, 4, 1]);
   assert.deepEqual(seededPermutation(12, 20260916), [7, 9, 10, 5, 1, 0, 2, 11, 3, 6, 4, 8]);
   assert.deepEqual(seededPermutation(0, 7), []);
@@ -53,7 +53,7 @@ test('plan geometry matches the desktop fit() and ShufflePlan::scrambled_layout'
   assert.throws(() => planGeometry({ width: 720, height: 1280, tile: 0, margin: 0 }), /positive/);
 });
 
-test('text seeds match veilcast_core::seed_from_text', () => {
+test('text seeds match vatrix_core::seed_from_text', () => {
   assert.equal(seedFromText('20260916'), 20260916n);
   assert.equal(seedFromText('007'), 7n);
   assert.equal(seedFromText('+007'), 7n);
@@ -64,7 +64,7 @@ test('text seeds match veilcast_core::seed_from_text', () => {
   assert.equal(seedFromText('18446744073709551615'), 2n ** 64n - 1n);
   assert.equal(seedFromText(''), 0xcbf29ce484222325n);
   assert.equal(seedFromText('a'), 0xaf63dc4c8601ec8cn);
-  assert.equal(seedFromText('veilcast'), 0x88d44f40babc4fa2n);
+  assert.equal(seedFromText('vatrix'), 0x610baf8d1d7fb3cbn);
   assert.equal(seedFromText('密码'), 0x0e4025f70675fc15n);
   assert.equal(seedFromText('-1'), 0x07d00b07b497d12bn);
   assert.equal(seedFromText('18446744073709551616'), 0xedf2aa6b38fc416dn);
@@ -75,17 +75,17 @@ test('plan geometry rejects unsafe integer dimensions and derived overflow', () 
   assert.throws(() => planGeometry({ width: 2, height: 2, tile: 2, margin: Number.MAX_SAFE_INTEGER }), /safe integer/);
 });
 
-test('intro header vectors match veilcast_core (tests/header.rs)', () => {
+test('intro header vectors match vatrix_core (tests/header.rs)', () => {
   const sample = { width: 2560, height: 1370, tile: 40, margin: 0, invert: true, audioMs: 0, audioMirror: false };
   assert.equal(encodeIntroHeader(sample), '0125601370040001000017');
   assert.equal(
-    encodeIntroHeader({ ...sample, seed: 0x88d44f40babc4fa2n }),
-    '012560137004000100000985959262365026294677',
+    encodeIntroHeader({ ...sample, seed: 0x610baf8d1d7fb3cbn }),
+    '012560137004000100000699287586704298490778',
   );
   assert.equal(encodeIntroHeader({ ...sample, audioMs: 250 }), '0125601370040001025073');
   assert.equal(
-    encodeIntroHeader({ ...sample, audioMs: 250, seed: 0x88d44f40babc4fa2n }),
-    '012560137004000102500985959262365026294691',
+    encodeIntroHeader({ ...sample, audioMs: 250, seed: 0x610baf8d1d7fb3cbn }),
+    '012560137004000102500699287586704298490792',
   );
   assert.equal(
     encodeIntroHeader({ width: 720, height: 1280, tile: 16, margin: 4, invert: false }),
@@ -96,8 +96,8 @@ test('intro header vectors match veilcast_core (tests/header.rs)', () => {
   assert.deepEqual(parseIntroHeader('0125601370040002000026'), { ...sample, invert: false, audioMirror: true, seed: null });
   assert.equal(encodeIntroHeader({ ...sample, audioMs: 250, audioMirror: true }), '0125601370040003025091');
   assert.equal(
-    encodeIntroHeader({ ...sample, audioMs: 250, audioMirror: true, seed: 0x88d44f40babc4fa2n }),
-    '012560137004000302500985959262365026294647',
+    encodeIntroHeader({ ...sample, audioMs: 250, audioMirror: true, seed: 0x610baf8d1d7fb3cbn }),
+    '012560137004000302500699287586704298490748',
   );
   assert.equal(
     encodeIntroHeader({ width: 720, height: 1280, tile: 16, margin: 4, audioMs: 250, audioMirror: true }),
@@ -107,10 +107,10 @@ test('intro header vectors match veilcast_core (tests/header.rs)', () => {
     width: 720, height: 1280, tile: 16, margin: 4, invert: false, audioMs: 250, audioMirror: true, seed: null,
   });
   assert.deepEqual(parseIntroHeader('0125601370040001000017'), { ...sample, seed: null });
-  assert.deepEqual(parseIntroHeader('012560137004000102500985959262365026294691'), {
+  assert.deepEqual(parseIntroHeader('012560137004000102500699287586704298490792'), {
     ...sample,
     audioMs: 250,
-    seed: 0x88d44f40babc4fa2n,
+    seed: 0x610baf8d1d7fb3cbn,
   });
   for (const header of [
     { ...sample, seed: 2n ** 64n - 1n },
@@ -138,7 +138,7 @@ test('intro header parser rejects the same strings as Rust', () => {
 test('legacy 18/38-digit intro headers from earlier releases remain readable', () => {
   const sample = { width: 2560, height: 1370, tile: 40, margin: 0, invert: true, audioMs: 0, audioMirror: false, seed: null };
   assert.deepEqual(parseIntroHeader('012560137004000145'), sample);
-  assert.deepEqual(parseIntroHeader('01256013700400010985959262365026294684'), { ...sample, seed: 0x88d44f40babc4fa2n });
+  assert.deepEqual(parseIntroHeader('01256013700400010699287586704298490785'), { ...sample, seed: 0x610baf8d1d7fb3cbn });
   assert.deepEqual(parseIntroHeader('010720128001604088'), {
     width: 720, height: 1280, tile: 16, margin: 4, invert: false, audioMs: 0, audioMirror: false, seed: null,
   });
@@ -349,7 +349,7 @@ test('restoring drops the treble where heavy bass leaks back as a steady 10 kHz 
   assert.ok(Math.abs(level(cut, 1000) - 0.05) < 0.005, 'the melody is untouched');
 });
 
-test('the sync chirp matches veilcast_core and pins the content start through an offset', () => {
+test('the sync chirp matches vatrix_core and pins the content start through an offset', () => {
   // tests/audio.rs pins the same samples.
   const chirp = syncChirp();
   assert.equal(chirp.length, 24000);

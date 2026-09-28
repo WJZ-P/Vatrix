@@ -1,4 +1,4 @@
-use veilcast_core::{Yuv420Layout, Yuv420Plan, invert_yuv420_limited, seeded_permutation};
+use vatrix_core::{Yuv420Layout, Yuv420Plan, invert_yuv420_limited, seeded_permutation};
 
 #[test]
 fn black_white_and_neutral_chroma_have_the_expected_complement() {

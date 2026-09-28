@@ -1,4 +1,4 @@
-use veilcast_core::{Error, FrameLayout, PixelFormat, ShufflePlan, Yuv420Layout, Yuv420Plan};
+use vatrix_core::{Error, FrameLayout, PixelFormat, ShufflePlan, Yuv420Layout, Yuv420Plan};
 
 fn packed_8x4() -> Yuv420Layout {
     Yuv420Layout::packed(8, 4).unwrap()

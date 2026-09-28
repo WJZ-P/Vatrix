@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use veilcast_core::{seed_from_text, seeded_permutation};
+use vatrix_core::{seed_from_text, seeded_permutation};
 
 #[test]
 fn known_answer_vectors_pin_the_algorithm() {
@@ -50,7 +50,7 @@ fn text_seeds_use_numbers_verbatim_and_fnv1a_otherwise() {
     assert_eq!(seed_from_text(""), 0xcbf2_9ce4_8422_2325);
     assert_eq!(seed_from_text("a"), 0xaf63_dc4c_8601_ec8c);
     // Pinned for the browser implementation.
-    assert_eq!(seed_from_text("veilcast"), 0x88d4_4f40_babc_4fa2);
+    assert_eq!(seed_from_text("vatrix"), 0x610b_af8d_1d7f_b3cb);
     assert_eq!(seed_from_text("密码"), 0x0e40_25f7_0675_fc15);
     assert_eq!(seed_from_text("-1"), 0x07d0_0b07_b497_d12b);
     assert_eq!(

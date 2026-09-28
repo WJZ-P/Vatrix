@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <meta charset="utf-8">
-<title>VeilCast userscript browser smoke test</title>
+<title>Vatrix userscript browser smoke test</title>
 <style>
   body { background: #111827; color: #e5e7eb; font: 14px/1.5 system-ui,sans-serif; margin: 24px; }
   h1 { font-size: 20px; }
@@ -22,7 +22,7 @@
   [data-result=pass] { color: #86efac; }
   [data-result=fail] { color: #fca5a5; }
 </style>
-<h1>VeilCast · Rust → 视频 → WebGL2 / 油猴脚本集成验证</h1>
+<h1>Vatrix · Rust → 视频 → WebGL2 / 油猴脚本集成验证</h1>
 <p>本地合成数据，DOM 结构模拟用户提供的播放器截图，不连接视频平台。</p>
 <div id="fixture"></div>
 <ol id="results"></ol>
@@ -34,8 +34,8 @@
   window.GM_setValue = (key, value) => saved.set(key, structuredClone(value));
   window.GM_registerMenuCommand = () => 1;
   window.GM_unregisterMenuCommand = () => {};
-  history.replaceState({}, '', '/video/veilcast-local-fixture/');
+  history.replaceState({}, '', '/video/vatrix-local-fixture/');
 </script>
-<script src="/userscript/veilcast.user.js"></script>
+<script src="/userscript/vatrix.user.js"></script>
 <script type="module" src="/userscript/tests/browser.mjs"></script>
 </html>

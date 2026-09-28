@@ -231,7 +231,7 @@ export function createAudioRestorer({ video, blockMs, mirror = false, introSecon
   reverseAudioBlocks, mirrorAudioSpectrumAsync, encodeWav, mirrorLead = 8192, trebleCut = 9700, trace = () => {} }) {
   const abort = new AbortController();
   const audio = document.createElement('audio');
-  audio.dataset.veilcastAudio = '';
+  audio.dataset.vatrixAudio = '';
   audio.preload = 'auto';
   host.append(audio);
   let objectUrl = null;
@@ -493,7 +493,7 @@ const worklets = new WeakMap();
  */
 export function mirrorWorkletSource(createMirrorStream, size) {
   return `const createMirrorStream = ${createMirrorStream};
-registerProcessor('veilcast-mirror', class extends AudioWorkletProcessor {
+registerProcessor('vatrix-mirror', class extends AudioWorkletProcessor {
   constructor() {
     super();
     this.stream = createMirrorStream(2, { size: ${size} });
@@ -597,7 +597,7 @@ export function createRealtimeMirror({ video, report, fallback, createMirrorStre
         worklets.set(context, context.audioWorklet.addModule(url).finally(() => URL.revokeObjectURL(url)));
       }
       await worklets.get(context);
-      const node = new AudioWorkletNode(context, 'veilcast-mirror', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2],
+      const node = new AudioWorkletNode(context, 'vatrix-mirror', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2],
         channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'speakers' });
       return { node, kind: 'worklet', post: (message) => node.port.postMessage(message) };
     } catch (error) {

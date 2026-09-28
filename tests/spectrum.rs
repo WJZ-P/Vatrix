@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use veilcast_core::{AudioError, MIRROR_SAMPLE_RATE, MIRROR_TREBLE_CUT_HZ, SpectrumMirror};
+use vatrix_core::{AudioError, MIRROR_SAMPLE_RATE, MIRROR_TREBLE_CUT_HZ, SpectrumMirror};
 
 const RATE: f64 = MIRROR_SAMPLE_RATE as f64;
 /// The mirror's carrier: 3472 bins of a 16384-point frame at 48 kHz.
@@ -46,7 +46,7 @@ fn snr_db(reference: &[f32], actual: &[f32]) -> f64 {
 
 #[test]
 fn a_tone_moves_to_the_carrier_minus_its_frequency_with_zero_phase_at_the_first_sample() {
-    // viewer/veilcast.test.mjs checks the same expectation for the JS port.
+    // viewer/vatrix.test.mjs checks the same expectation for the JS port.
     let frames = 96_000;
     let output = mirror(&tone(1_000.0, frames), 1, 4_096);
     assert_eq!(output.len(), frames);

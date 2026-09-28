@@ -10,8 +10,8 @@ import { fileURLToPath } from 'node:url';
 const root = new URL('../', import.meta.url);
 const path = (relative) => fileURLToPath(new URL(relative, root));
 const ffmpeg = path('tools/ffmpeg/ffmpeg.exe');
-const source = path('assets/branding/veilcast-icon-v3-source.png');
-const master = path('assets/branding/veilcast-icon.png');
+const source = path('assets/branding/vatrix-icon-v3-source.png');
+const master = path('assets/branding/vatrix-icon.png');
 const size = 1024;
 
 const rgba = execFileSync(ffmpeg, ['-v', 'error', '-i', source, '-vf', `scale=${size}:${size}`, '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'],

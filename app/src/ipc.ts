@@ -112,7 +112,7 @@ export function planPreview(params: PlanParams): Promise<PlanPreview> {
   return invoke<PlanPreview>("plan_preview", { ...params });
 }
 
-/** A file passed on the command line or via VEILCAST_OPEN, if any. */
+/** A file passed on the command line or via VATRIX_OPEN, if any. */
 export function initialFile(): Promise<string | null> {
   return invoke<string | null>("initial_file");
 }

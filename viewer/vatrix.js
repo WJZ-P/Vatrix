@@ -1,6 +1,6 @@
-// Browser-side restore for VeilCast tile scrambling.
+// Browser-side restore for Vatrix tile scrambling.
 //
-// Mirrors veilcast_core: `seededPermutation` is `seeded_permutation` (splitmix64
+// Mirrors vatrix_core: `seededPermutation` is `seeded_permutation` (splitmix64
 // + Fisher-Yates) and `createRestorer` is `ShufflePlan::restore` as a WebGL2
 // fragment shader. Sampling is done in normalised coordinates of the uploaded
 // frame, so a platform that rescales the video does not break the tile grid.
@@ -72,7 +72,7 @@ export function planGeometry({ width, height, tile, margin }) {
   };
 }
 
-/** Layout version of the numeric intro header; mirrors veilcast_core::HEADER_VERSION. */
+/** Layout version of the numeric intro header; mirrors vatrix_core::HEADER_VERSION. */
 export const HEADER_VERSION = 1;
 
 function headerChecksum(digits) {
@@ -275,7 +275,7 @@ function audioBlockSamples(sampleRate, blockMs) {
 
 /**
  * Reverses time inside every whole block of planar audio, in place: the
- * browser mirror of veilcast_core::reverse_blocks, and like it its own
+ * browser mirror of vatrix_core::reverse_blocks, and like it its own
  * inverse. Blocks start at sample `start`; samples before it and a trailing
  * partial block are left alone. `channels` is an array of Float32Array
  * (AudioBuffer.getChannelData). Returns the number of blocks reversed.
@@ -291,7 +291,7 @@ export function reverseAudioBlocks(channels, { sampleRate, blockMs, start = 0 })
   return blocks;
 }
 
-// Spectrum mirror geometry, shared with veilcast_core::SpectrumMirror: a
+// Spectrum mirror geometry, shared with vatrix_core::SpectrumMirror: a
 // 16384-point STFT (2.93 Hz bins at 48 kHz) with sqrt-Hann windows at half
 // overlap, mirroring bins 56..=3416 (164 Hz–10 kHz) onto each other, bin
 // k <-> MIRROR_CENTER - k. Long frames keep the band edges sharp; with 2048
@@ -370,7 +370,7 @@ function* mirrorSteps(channels, anchor, sliceFrames, cutoffHz) {
   });
 }
 
-/** veilcast_core::MIRROR_TREBLE_CUT_HZ: restoring drops the output above this, see createMirrorStream. */
+/** vatrix_core::MIRROR_TREBLE_CUT_HZ: restoring drops the output above this, see createMirrorStream. */
 export const MIRROR_TREBLE_CUT_HZ = 9700;
 
 /** In place, planar channels: each frame's packed spectrum goes through `edit(re, im, start)`. */
@@ -415,7 +415,7 @@ function* stftSteps(channels, sliceFrames, edit) {
 
 /**
  * Mirrors the 164 Hz–10 kHz band of planar audio in place (f -> 10172 Hz - f),
- * the browser counterpart of veilcast_core::SpectrumMirror; like it, its own
+ * the browser counterpart of vatrix_core::SpectrumMirror; like it, its own
  * inverse up to window-edge rounding. Bass and treble outside the band pass
  * through. `anchor` is the sample where the carrier phase is zero: the
  * content start, so that both ends agree on it after any container offset.
@@ -436,7 +436,7 @@ export async function mirrorAudioSpectrumAsync(channels, { anchor = 0, signal, s
   }
 }
 
-/** veilcast_core::MIRROR_STREAM_LATENCY: a mirror-only upload runs this many samples early. */
+/** vatrix_core::MIRROR_STREAM_LATENCY: a mirror-only upload runs this many samples early. */
 export const MIRROR_STREAM_LATENCY = 8192;
 
 /**
@@ -448,7 +448,7 @@ export const MIRROR_STREAM_LATENCY = 8192;
  * the whole band, which is close to inaudible. `size` is a multiple of 2048.
  *
  * It restores, so the output above `cutoffHz` is dropped
- * (veilcast_core::MIRROR_TREBLE_CUT_HZ): edge leakage and codec noise land
+ * (vatrix_core::MIRROR_TREBLE_CUT_HZ): edge leakage and codec noise land
  * there, heavy bass as a steady 10 kHz tone. `Infinity` keeps everything.
  *
  * Self-contained on purpose (no outer references): the userscript ships its
@@ -563,11 +563,11 @@ export function createMirrorStream(channelCount, { size = 8192, anchor = 0, cuto
   };
 }
 
-/** Samples from the start of the sync chirp to the first content sample; veilcast_core::SYNC_CHIRP_LEAD. */
+/** Samples from the start of the sync chirp to the first content sample; vatrix_core::SYNC_CHIRP_LEAD. */
 export const SYNC_CHIRP_LEAD = 36000;
 let syncChirpCache = null;
 
-/** veilcast_core::sync_chirp: 0.5 s, 1→8 kHz, −40 dBFS, 10 ms fades, 48 kHz. */
+/** vatrix_core::sync_chirp: 0.5 s, 1→8 kHz, −40 dBFS, 10 ms fades, 48 kHz. */
 export function syncChirp() {
   if (syncChirpCache) return syncChirpCache;
   const length = 24000, fade = 480, duration = length / 48000;

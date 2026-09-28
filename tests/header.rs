@@ -1,4 +1,4 @@
-use veilcast_core::{HEADER_VERSION, HeaderError, IntroHeader};
+use vatrix_core::{HEADER_VERSION, HeaderError, IntroHeader};
 
 fn sample() -> IntroHeader {
     IntroHeader {
@@ -19,12 +19,12 @@ fn known_answer_vectors_pin_the_layout() {
     assert_eq!(HEADER_VERSION, 1);
     assert_eq!(sample().encode().unwrap(), "0125601370040001000017");
     let with_seed = IntroHeader {
-        seed: Some(0x88d4_4f40_babc_4fa2), // seed_from_text("veilcast")
+        seed: Some(0x610b_af8d_1d7f_b3cb), // seed_from_text("vatrix")
         ..sample()
     };
     assert_eq!(
         with_seed.encode().unwrap(),
-        "012560137004000100000985959262365026294677"
+        "012560137004000100000699287586704298490778"
     );
     let with_audio = IntroHeader {
         audio_ms: 250,
@@ -38,7 +38,7 @@ fn known_answer_vectors_pin_the_layout() {
         }
         .encode()
         .unwrap(),
-        "012560137004000102500985959262365026294691"
+        "012560137004000102500699287586704298490792"
     );
     // Mirror only: flags 2 with no block length.
     let mirror_only = IntroHeader {
@@ -63,7 +63,7 @@ fn known_answer_vectors_pin_the_layout() {
         }
         .encode()
         .unwrap(),
-        "012560137004000302500985959262365026294647"
+        "012560137004000302500699287586704298490748"
     );
     let portrait = IntroHeader {
         width: 720,
@@ -163,11 +163,11 @@ fn rejects_malformed_strings() {
 fn legacy_headers_without_audio_remain_readable() {
     assert_eq!(IntroHeader::parse("012560137004000145").unwrap(), sample());
     let with_seed = IntroHeader {
-        seed: Some(0x88d4_4f40_babc_4fa2),
+        seed: Some(0x610b_af8d_1d7f_b3cb),
         ..sample()
     };
     assert_eq!(
-        IntroHeader::parse("01256013700400010985959262365026294684").unwrap(),
+        IntroHeader::parse("01256013700400010699287586704298490785").unwrap(),
         with_seed
     );
     let portrait = IntroHeader {

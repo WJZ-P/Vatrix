@@ -1,4 +1,4 @@
-//! Tauri shell around `veilcast_core`. Commands are the only surface the
+//! Tauri shell around `vatrix_core`. Commands are the only surface the
 //! frontend sees; keep them thin and let `ffmpeg.rs` and the core crate do
 //! the work.
 
@@ -7,7 +7,7 @@ pub mod intro;
 
 use serde::Serialize;
 use tauri::ipc::{Channel, Response};
-use veilcast_core::{Yuv420Layout, Yuv420Plan, seeded_permutation};
+use vatrix_core::{Yuv420Layout, Yuv420Plan, seeded_permutation};
 
 use ffmpeg::{JobParams, JobResult, Progress, Tools, VideoInfo, WorkSize};
 
@@ -88,13 +88,13 @@ async fn snapshot(path: String, seconds: f64) -> Result<Response, String> {
 }
 
 /// A video handed to the app at launch: the first CLI argument (so "open
-/// with" and dropping a file onto the executable work) or `VEILCAST_OPEN`.
+/// with" and dropping a file onto the executable work) or `VATRIX_OPEN`.
 #[tauri::command]
 fn initial_file() -> Option<String> {
     std::env::args()
         .nth(1)
         .filter(|arg| !arg.starts_with('-'))
-        .or_else(|| std::env::var("VEILCAST_OPEN").ok())
+        .or_else(|| std::env::var("VATRIX_OPEN").ok())
         .filter(|path| std::path::Path::new(path).is_file())
 }
 

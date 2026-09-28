@@ -1,7 +1,7 @@
 //! Synthetic SDR fixtures: range normalization, inversion, metadata and restore.
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
-use veilcast_app_lib::ffmpeg::{JobParams, Mode, Tools, probe, run_job};
+use vatrix_app_lib::ffmpeg::{JobParams, Mode, Tools, probe, run_job};
 
 fn ffmpeg() -> PathBuf {
     let executable = if cfg!(windows) {
@@ -9,7 +9,7 @@ fn ffmpeg() -> PathBuf {
     } else {
         "ffmpeg"
     };
-    let folder = std::env::var_os("VEILCAST_FFMPEG_DIR")
+    let folder = std::env::var_os("VATRIX_FFMPEG_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/ffmpeg"));
     let local = folder.join(executable);

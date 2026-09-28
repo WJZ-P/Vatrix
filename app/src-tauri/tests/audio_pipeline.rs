@@ -4,8 +4,8 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use veilcast_app_lib::ffmpeg::{JobParams, Mode, Tools, probe, run_job, scramble_audio};
-use veilcast_core::MIRROR_STREAM_LATENCY;
+use vatrix_app_lib::ffmpeg::{JobParams, Mode, Tools, probe, run_job, scramble_audio};
+use vatrix_core::MIRROR_STREAM_LATENCY;
 
 const SAMPLE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -320,7 +320,7 @@ fn reversed_audio_survives_the_full_job() {
             height: 1280,
             tile: 40,
             margin: 0,
-            seed: "veilcast".into(),
+            seed: "vatrix".into(),
             invert: false,
             intro: true,
             seed_in_intro: false,

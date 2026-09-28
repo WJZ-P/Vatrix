@@ -98,7 +98,7 @@ export function pageSettings(pages, key) {
   if (Object.keys(settings).length === 0) return null;
   // Remembered before the mirror existed: that upload was reversed only.
   if (settings.audioMs !== undefined && settings.audioMirror === undefined) settings.audioMirror = false;
-  // Only 'intro' means a checksummed header proved this page is a VeilCast upload.
+  // Only 'intro' means a checksummed header proved this page is a Vatrix upload.
   return { settings, source: entry.source === 'intro' ? 'intro' : 'manual', savedAt: Number(entry.savedAt) || 0 };
 }
 

@@ -1,8 +1,8 @@
-use veilcast_core::{AudioError, SYNC_CHIRP_LEAD, block_frames, reverse_blocks, sync_chirp};
+use vatrix_core::{AudioError, SYNC_CHIRP_LEAD, block_frames, reverse_blocks, sync_chirp};
 
 #[test]
 fn the_sync_chirp_matches_the_viewer() {
-    // viewer/veilcast.test.mjs pins the same samples.
+    // viewer/vatrix.test.mjs pins the same samples.
     let chirp = sync_chirp();
     assert_eq!((chirp.len(), SYNC_CHIRP_LEAD), (24_000, 36_000));
     for (index, expected) in [

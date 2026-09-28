@@ -1,7 +1,7 @@
 // Builds the images the desktop app draws into the one-second intro, as QOI
 // (lossless, and small enough to decode in a few lines of Rust):
 //   app/src-tauri/assets/intro-logo.qoi   the icon master at 384×384
-//   app/src-tauri/assets/intro-title.qoi  "VeilCast" in white, cropped to its ink
+//   app/src-tauri/assets/intro-title.qoi  "Vatrix" in white, cropped to its ink
 // Run from the repository root after changing the icon master or the wordmark:
 //   node scripts/generate-intro-assets.mjs
 import { execFileSync } from 'node:child_process';
@@ -17,7 +17,7 @@ const encode = (rgba, width, height, name) => execFileSync(ffmpeg, ['-v', 'error
   '-s', `${width}x${height}`, '-i', '-', '-frames:v', '1', '-c:v', 'qoi', `${out}${name}`], { input: rgba });
 
 const logo = 384;
-const logoRgba = execFileSync(ffmpeg, ['-v', 'error', '-i', path('assets/branding/veilcast-icon.png'),
+const logoRgba = execFileSync(ffmpeg, ['-v', 'error', '-i', path('assets/branding/vatrix-icon.png'),
   '-vf', `scale=${logo}:${logo}:flags=lanczos`, '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], { maxBuffer: 1 << 24 });
 encode(logoRgba, logo, logo, 'intro-logo.qoi');
 
@@ -25,7 +25,7 @@ encode(logoRgba, logo, logo, 'intro-logo.qoi');
 const canvas = [1600, 400];
 const font = 'C\\:/Windows/Fonts/segoeuib.ttf';
 const grey = execFileSync(ffmpeg, ['-v', 'error', '-f', 'lavfi', '-i', `color=c=black:s=${canvas[0]}x${canvas[1]}:d=1,format=gray,` +
-  `drawtext=fontfile='${font}':text='VeilCast':fontcolor=white:fontsize=256:x=40:y=40`,
+  `drawtext=fontfile='${font}':text='Vatrix':fontcolor=white:fontsize=256:x=40:y=40`,
   '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'gray', '-'], { maxBuffer: 1 << 24 });
 let [left, top, right, bottom] = [canvas[0], canvas[1], -1, -1];
 for (let y = 0; y < canvas[1]; y++) {

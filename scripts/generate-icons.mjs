@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = new URL('../', import.meta.url);
-const master = new URL('assets/branding/veilcast-icon.png', root);
+const master = new URL('assets/branding/vatrix-icon.png', root);
 const cli = new URL('app/node_modules/@tauri-apps/cli/tauri.js', root);
 const scratch = new URL('target/branding-icons/', root);
 const desktop = new URL('desktop/', scratch);

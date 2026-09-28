@@ -59,8 +59,8 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
   const location = { href: 'https://www.bilibili.com/video/BVfixture/', search: '' };
   const saved = new Map();
   if (audioFailure || audioFactory || realtimeFactory) {
-    saved.set('veilcast.bilibili.settings.v1', { ...defaults, autoIntro: true, ...audioPlan });
-    saved.set('veilcast.bilibili.pages.v1', rememberPageSettings({}, videoPageKey(location.href),
+    saved.set('vatrix.bilibili.settings.v1', { ...defaults, autoIntro: true, ...audioPlan });
+    saved.set('vatrix.bilibili.pages.v1', rememberPageSettings({}, videoPageKey(location.href),
       { ...defaults, autoIntro: true, ...audioPlan }, 'intro'));
   }
   const callbacks = [];
@@ -173,7 +173,7 @@ test('diagnostic copy uses only the redacted in-memory log', async (t) => {
   r.panel.getElementById('copy-diagnostics').dispatchEvent(new Event('click'));
   await flush();
   assert.equal(r.copied.length, 1);
-  assert.match(r.copied[0], /VeilCast ui-test/);
+  assert.match(r.copied[0], /Vatrix ui-test/);
   assert.ok(!r.copied[0].includes('sensitive-seed'));
   assert.match(r.panel.getElementById('log-status').textContent, /已复制/);
 });

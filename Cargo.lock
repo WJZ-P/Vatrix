@@ -4119,7 +4119,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "veilcast-app"
+name = "vatrix-app"
 version = "0.1.0"
 dependencies = [
  "qrcode",
@@ -4130,11 +4130,11 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
- "veilcast-core",
+ "vatrix-core",
 ]
 
 [[package]]
-name = "veilcast-core"
+name = "vatrix-core"
 version = "0.1.0"
 
 [[package]]

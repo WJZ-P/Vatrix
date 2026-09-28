@@ -1,21 +1,21 @@
-# VeilCast B 站油猴插件
+# Vatrix B 站油猴插件
 
 在 `.bpx-player-primary-area` 内查找 `video`，用 WebGL2 叠加还原画面。
-直接复用 `viewer/veilcast.js` 的 SplitMix64、Fisher–Yates、FNV-1a 和 margin 裁除逻辑。
+直接复用 `viewer/vatrix.js` 的 SplitMix64、Fisher–Yates、FNV-1a 和 margin 裁除逻辑。
 不重新下载视频，不改视频 `src`、音轨、弹幕或播放进度。
 
 ## 安装与使用
 
-1. 首次安装：在油猴管理器中新建脚本，把 `userscript/veilcast.user.js` 的**完整内容**粘贴进去并保存。
+1. 首次安装：在油猴管理器中新建脚本，把 `userscript/vatrix.user.js` 的**完整内容**粘贴进去并保存。
    从旧版升级：在原脚本编辑页全文替换、保存，再刷新视频页；当前版本 **0.3.2**，不要同时启用两份副本。
 2. 打开或刷新 `https://www.bilibili.com/video/*` 视频页。
-3. 点击**分享右侧**的 **VeilCast · 关**，在按钮下方弹出的设置窗口填写参数，再点击 **启用还原**。
+3. 点击**分享右侧**的 **Vatrix · 关**，在按钮下方弹出的设置窗口填写参数，再点击 **启用还原**。
 4. **停用还原**会立即撤去还原画面；**应用参数**会保存参数，启用中则重建还原计划。
-   也可从油猴菜单「VeilCast：还原参数」展开面板。Esc、关闭按钮或点击窗口外部都可关闭。
+   也可从油猴菜单「Vatrix：还原参数」展开面板。Esc、关闭按钮或点击窗口外部都可关闭。
    窗口不占工具栏布局；空间不足时滚动页面腾出下方空间，短视口内限高滚动。
 
 **片头二维码（默认开）**：桌面端加密的视频前 1 秒是一张二维码。脚本在播放头位于前 1.5 秒时每 100 ms 抓一帧解码
-（内置 jsQR，不依赖 `BarcodeDetector`），读到 VeilCast 的数字协议后自动填入宽高、tile、margin、反色
+（内置 jsQR，不依赖 `BarcodeDetector`），读到 Vatrix 的数字协议后自动填入宽高、tile、margin、反色
 （片头含 seed 时连 seed 一起），保存并**自动启用还原**。普通视频里的其他二维码不会通过版本号和校验位，因此不会误启用。
 自动扫描仅在播放头位于前 1.5 秒时启动，每轮最多等待 5 秒。从中途续播后**拖回片头**会重新尝试：即使 seeked 时帧尚未就绪，
 扫描器也会等待可读帧；canplay/playing 会补充触发，重复事件共用同一次扫描。暂停在二维码处也可识别，无需先播放。
@@ -34,7 +34,7 @@ flags 第 1 位表示音频做过频谱翻转：块长为 0 时是只翻转（�
 ### 诊断日志
 
 面板标题显示当前脚本版本。点击“识别当前二维码”后按钮立即变成“识别中”，状态就在按钮下方。
-浏览器控制台过滤 `VeilCast` 可查看日志，也可直接点击 **复制诊断日志**，或展开“查看诊断日志”。
+浏览器控制台过滤 `Vatrix` 可查看日志，也可直接点击 **复制诊断日志**，或展开“查看诊断日志”。
 若剪贴板权限被拒绝，会显示并选中日志文本，按 Ctrl+C 即可复制。
 
 日志带版本号、挂载编号和扫描编号，覆盖：
@@ -52,7 +52,7 @@ flags 第 1 位表示音频做过频谱翻转：块长为 0 时是只翻转（�
 seed、二维码原文、媒体 URL、令牌和图像数据不主动记录，并对敏感字段做脱敏。音频初始化异常会单独报告，不再阻断读码器初始化。
 
 **记住每个视频的参数**：读到片头二维码后，脚本把这一份参数按 BVID + 分 P（不含清晰度等其它 query）存进
-`veilcast.bilibili.pages.v1`，并标记为"片头验证过"。下次打开同一个视频时直接套用并自动启用还原，
+`vatrix.bilibili.pages.v1`，并标记为"片头验证过"。下次打开同一个视频时直接套用并自动启用还原，
 即使从中途开始播放、根本看不到片头也有效。片头不含 seed 时，你在这个视频页里手动填写的 seed 同样会被记住，
 且不会降级这条记录。记录上限 50 条，超出后淘汰最旧的；面板里点「默认」会忘掉当前视频的记录。
 只有片头验证过的视频会自行启用还原，手动填过参数的页面只预填、不自动开。
@@ -117,7 +117,7 @@ B 站 video ──声音──▶ MediaElementSource ──▶ AudioWorklet（�
 
 ## 参数
 
-油猴管理器列表和分享右侧的 VeilCast 按钮均使用项目的分片 V 图标，与 Tauri 一致。
+油猴管理器列表和分享右侧的 Vatrix 按钮均使用项目的分片 V 图标，与 Tauri 一致。
 32/64 像素 PNG 随脚本内嵌，不依赖图床；修改母版后依次运行 `node scripts/generate-icons.mjs` 和 `node userscript/build.mjs`。
 
 | 参数 | 默认值 | 含义 |
@@ -168,9 +168,9 @@ URL 参数会进入站点请求和浏览器历史；需要保密的 seed 应在�
 - `src/main.js`：分享右侧入口、Shadow DOM 原生 dialog、动态播放器绑定、帧调度和生命周期清理。
 - `src/intro.js`：二维码扫描的媒体事件协调、缓冲等待、手动重试、取消和过期结果隔离；有纯 Node 回归测试。
 - `src/audio.js`：`createRealtimeMirror` 把视频声音接入 AudioWorklet 实时翻转（worklet 源码由 `createMirrorStream` 的源文本生成，
-  用 blob 地址加载）；`createAudioRestorer` 定位并下载音轨、还原音轨的播放同步；准备期间保留原声，替代音轨成功播放后才静音原声，解码或播放失败时交还原声（不是已还原的声音）。倒放、频谱翻转、扫频音对齐、找栅格、WAV 编码在 `viewer/veilcast.js`。
+  用 blob 地址加载）；`createAudioRestorer` 定位并下载音轨、还原音轨的播放同步；准备期间保留原声，替代音轨成功播放后才静音原声，解码或播放失败时交还原声（不是已还原的声音）。倒放、频谱翻转、扫频音对齐、找栅格、WAV 编码在 `viewer/vatrix.js`。
   检查 HTTP 范围响应和 MP4 容器；发现分片/截断时以 `Range: bytes=0-` 重试一次。诊断记录 `download-response`（状态、类型、范围）、`download-inspected`（容器、编码、初始化信息）及 `prepare-error.stage`，不记录音频内容或下载地址。
-- `build.mjs`：将核心、参数和页面集成内联为 `veilcast.user.js`；无 npm 依赖、无 CDN。
+- `build.mjs`：将核心、参数和页面集成内联为 `vatrix.user.js`；无 npm 依赖、无 CDN。
   `viewer/vendor/jsQR.js`（Apache-2.0）以本地 CommonJS 壳内联，不挂到页面 window 上。
 - 帧循环优先使用 `requestVideoFrameCallback`，旧浏览器回退到 rAF；暂停/后台时停止主动帧循环，拖动进度后重绘。
 - 反色合并在原有 shader 中：采样、逆重排、丢弃 margin 后按开关执行 `1-RGB`，不改 alpha；参数持久化保存明确的布尔值。
@@ -214,9 +214,9 @@ node viewer/serve.mjs 8767
 ```
 
 打开 `http://127.0.0.1:8767/userscript/tests/browser.html`。
-片头二维码路径另有 `userscript/tests/intro.html`：它加载 `cargo test -p veilcast-app --test pipeline` 生成的
+片头二维码路径另有 `userscript/tests/intro.html`：它加载 `cargo test -p vatrix-app --test pipeline` 生成的
 `target/tmp/pipeline-intro/low.mp4`（元数据已抹、360p 转码），检查脚本在第一秒内自动纠正错误参数并启用还原。
-音频先跑 `cargo test -p veilcast-app --test audio_pipeline`，它生成按 AAC 64k 转码过的 `platform.mp4`（元数据已抹）
+音频先跑 `cargo test -p vatrix-app --test audio_pipeline`，它生成按 AAC 64k 转码过的 `platform.mp4`（元数据已抹）
 和 B 站式纯音频分片 `platform.m4s`，只翻转和 0.2.0 旧格式各一套。
 `userscript/tests/audio.html` 检查实时还原：先按 128 样本一块用流式翻转直接还原两个文件（与原声对比约 12.5 dB），
 再让脚本读片头、接管视频声音，在 worklet 输出上测频谱（低频应远强于 8–10 kHz）、音量 0.25 时降 12 dB、暂停静音、跳转后继续、

@@ -13,7 +13,7 @@ test('diagnostics are versioned, bounded snapshots, not live objects', () => {
   logger.log('third');
   assert.ok(!logger.dump().includes('"event":"first"'));
   assert.ok(logger.dump().includes('"sequence":3'));
-  assert.match(output[0][0], /VeilCast test/);
+  assert.match(output[0][0], /Vatrix test/);
   assert.equal(JSON.parse(output[0][1]).readyState, 1);
 });
 

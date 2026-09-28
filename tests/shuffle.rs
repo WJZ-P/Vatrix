@@ -1,4 +1,4 @@
-use veilcast_core::{Error, FrameLayout, PixelFormat, ShufflePlan};
+use vatrix_core::{Error, FrameLayout, PixelFormat, ShufflePlan};
 
 fn small_layout() -> FrameLayout {
     FrameLayout::new(4, 2, PixelFormat::Gray8, 4).unwrap()

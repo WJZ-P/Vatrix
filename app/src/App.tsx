@@ -39,7 +39,7 @@ const Title = styled.h1`
   }
 `;
 
-const SETTINGS_KEY = "veilcast.settings";
+const SETTINGS_KEY = "vatrix.settings";
 const DEFAULT_SETTINGS: PlanSettings & { outputDir: string } = defaultSettings;
 
 function loadSettings(): typeof DEFAULT_SETTINGS {
@@ -168,7 +168,7 @@ function App() {
     <Shell>
       <Title>
         <img src="/icon.png" width={28} height={28} alt="" aria-hidden="true" />
-        VeilCast<span>{status}</span>
+        Vatrix<span>{status}</span>
       </Title>
       <DropZone file={file} onFile={onFile} />
       {probeError && <Note tone="error">{probeError}</Note>}

@@ -12,7 +12,7 @@
 use std::io::{self, BufReader, BufWriter, Read, Write};
 use std::process::ExitCode;
 
-use veilcast_core::{
+use vatrix_core::{
     Error, FrameLayout, PixelFormat, ShufflePlan, Yuv420Layout, Yuv420Plan, invert_yuv420_limited,
     seeded_permutation,
 };

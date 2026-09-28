@@ -29,11 +29,11 @@ export function createDiagnostics({ version = 'unknown', sink = console, capacit
       if (entries.length > limit) entries.shift();
       const method = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'info';
       // Log a string snapshot, not live references which DevTools may expand later.
-      try { sink?.[method]?.(`[VeilCast ${version}] #${entry.sequence} ${entry.event}`, JSON.stringify(entry.details)); }
+      try { sink?.[method]?.(`[Vatrix ${version}] #${entry.sequence} ${entry.event}`, JSON.stringify(entry.details)); }
       catch { /* Console failures must not change playback or decoding. */ }
     },
     dump() {
-      return `VeilCast ${version} diagnostics (local, redacted)\n${entries.map((entry) => JSON.stringify(entry)).join('\n')}`;
+      return `Vatrix ${version} diagnostics (local, redacted)\n${entries.map((entry) => JSON.stringify(entry)).join('\n')}`;
     },
   };
 }

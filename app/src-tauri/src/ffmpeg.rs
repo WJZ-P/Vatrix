@@ -1,5 +1,5 @@
 //! ffmpeg as a sidecar process: probing, snapshots, and the scramble/restore
-//! pipeline (decode → veilcast_core → encode) with the frames pumped through
+//! pipeline (decode → vatrix_core → encode) with the frames pumped through
 //! pipes. Nothing here touches Tauri; `lib.rs` wraps it in commands.
 
 use std::io::{Read, Write};
@@ -9,7 +9,7 @@ use std::sync::OnceLock;
 use std::thread;
 
 use serde::{Deserialize, Serialize};
-use veilcast_core::{
+use vatrix_core::{
     IntroHeader, MIRROR_SAMPLE_RATE, MIRROR_STREAM_LATENCY, SYNC_CHIRP_LEAD, SpectrumMirror,
     Yuv420Layout, Yuv420Plan, block_frames, invert_yuv420_limited, reverse_blocks, seed_from_text,
     seeded_permutation, sync_chirp,
@@ -19,7 +19,7 @@ use crate::intro;
 
 /// Tag written into scrambled files so restore can prefill the geometry.
 /// The seed is deliberately not included.
-const METADATA_PREFIX: &str = "veilcast/1";
+const METADATA_PREFIX: &str = "vatrix/1";
 
 /// Audio is pinned to 48 kHz so the block grid is the same number of samples
 /// on both ends, whatever the source used; the spectrum mirror requires it too.
@@ -34,11 +34,11 @@ pub struct Tools {
 }
 
 impl Tools {
-    /// Finds ffmpeg/ffprobe: `VEILCAST_FFMPEG_DIR`, next to the executable,
+    /// Finds ffmpeg/ffprobe: `VATRIX_FFMPEG_DIR`, next to the executable,
     /// the development checkout's `tools/ffmpeg`, then `PATH`.
     pub fn locate() -> Result<Self, String> {
         let mut candidates = Vec::new();
-        if let Ok(dir) = std::env::var("VEILCAST_FFMPEG_DIR") {
+        if let Ok(dir) = std::env::var("VATRIX_FFMPEG_DIR") {
             candidates.push(PathBuf::from(dir));
         }
         if let Some(dir) = std::env::current_exe()
@@ -64,7 +64,7 @@ impl Tools {
         match command(&tools.ffprobe).arg("-version").output() {
             Ok(output) if output.status.success() => Ok(tools),
             _ => Err(
-                "找不到 ffmpeg：请运行 scripts/fetch-ffmpeg.ps1，或设置 VEILCAST_FFMPEG_DIR".into(),
+                "找不到 ffmpeg：请运行 scripts/fetch-ffmpeg.ps1，或设置 VATRIX_FFMPEG_DIR".into(),
             ),
         }
     }
@@ -500,7 +500,7 @@ pub struct JobParams {
     pub height: usize,
     pub tile: usize,
     pub margin: usize,
-    /// Text seed, see `veilcast_core::seed_from_text`.
+    /// Text seed, see `vatrix_core::seed_from_text`.
     pub seed: String,
     /// Omitted by older clients: preserve the pre-inversion pipeline.
     #[serde(default)]
@@ -563,7 +563,7 @@ impl TempFile {
         static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let serial = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!(
-            "veilcast-{}-{serial}.{extension}",
+            "vatrix-{}-{serial}.{extension}",
             std::process::id()
         ));
         Ok(Self(path))
@@ -597,7 +597,7 @@ impl Drop for TempFile {
 /// Loud, rhythmic content through a low-bitrate codec still defeats that
 /// search, so a mirrored intro second carries [`sync_chirp`] instead of pure
 /// silence. The mirror step is not lossless: both ends drop the treble above
-/// [`veilcast_core::MIRROR_TREBLE_CUT_HZ`], and it rounds back to 16 bits,
+/// [`vatrix_core::MIRROR_TREBLE_CUT_HZ`], and it rounds back to 16 bits,
 /// clipping anything it pushes past full scale.
 ///
 /// `block_ms` 0 with `mirror` is mirror only, which a viewer undoes in real
@@ -969,7 +969,7 @@ pub fn run_job(
                 ));
             }
             let name = format!(
-                "{stem}.veilcast-t{}m{}{}.mp4",
+                "{stem}.vatrix-t{}m{}{}.mp4",
                 params.tile,
                 params.margin,
                 if params.invert { "-inv" } else { "" }
@@ -985,7 +985,7 @@ pub fn run_job(
             (original, scrambled, name, pad, "null".to_string())
         }
         Mode::Restore => {
-            let stem = stem.split(".veilcast-").next().unwrap_or(stem);
+            let stem = stem.split(".vatrix-").next().unwrap_or(stem);
             let scale = format!(
                 "scale={}:{}:flags=bicubic",
                 scrambled.width(),
@@ -1263,7 +1263,7 @@ mod tests {
 
     #[test]
     fn inversion_hints_are_optional_and_strictly_boolean() {
-        let legacy = "veilcast/1 width=80 height=48 tile=16 margin=4 source=78x46";
+        let legacy = "vatrix/1 width=80 height=48 tile=16 margin=4 source=78x46";
         let hint = parse_hint(legacy).unwrap();
         assert!(!hint.invert);
         assert_eq!((hint.width, hint.height), (78, 46));
@@ -1274,7 +1274,7 @@ mod tests {
 
     #[test]
     fn files_without_a_mirror_tag_were_reversed_only() {
-        let reversed = "veilcast/1 width=80 height=48 tile=16 margin=4 source=78x46 audio=50";
+        let reversed = "vatrix/1 width=80 height=48 tile=16 margin=4 source=78x46 audio=50";
         let hint = parse_hint(reversed).unwrap();
         assert_eq!((hint.audio_ms, hint.audio_mirror), (50, false));
         assert!(

@@ -1,9 +1,9 @@
-//! The one-second intro: the VeilCast logo and name above the header's QR
+//! The one-second intro: the Vatrix logo and name above the header's QR
 //! code, rendered straight into raw yuv420p frames, and reading the code back
 //! from a decoded frame. The intro is never scrambled or inverted, so a viewer
 //! can read it before knowing any parameter.
 
-use veilcast_core::{IntroHeader, Yuv420Layout};
+use vatrix_core::{IntroHeader, Yuv420Layout};
 
 /// Length of the intro; the browser scans this window for the QR code.
 pub const INTRO_SECONDS: f64 = 1.0;
@@ -377,7 +377,7 @@ impl Picture {
     }
 }
 
-/// Looks for a VeilCast header in an 8-bit greyscale frame (row-major, no
+/// Looks for a Vatrix header in an 8-bit greyscale frame (row-major, no
 /// padding). Other QR codes in the frame are ignored.
 pub fn read_frame(width: usize, height: usize, luma: &[u8]) -> Option<IntroHeader> {
     if luma.len() < width * height || width == 0 || height == 0 {
@@ -405,7 +405,7 @@ mod tests {
             invert: true,
             audio_ms: 250,
             audio_mirror: true,
-            seed: Some(0x88d4_4f40_babc_4fa2),
+            seed: Some(0x610b_af8d_1d7f_b3cb),
         }
     }
 

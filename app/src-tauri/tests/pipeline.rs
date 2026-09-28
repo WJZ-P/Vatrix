@@ -3,7 +3,7 @@
 
 use std::path::Path;
 
-use veilcast_app_lib::ffmpeg::{
+use vatrix_app_lib::ffmpeg::{
     JobParams, Mode, Tools, WorkSize, fit, hardware_encoder, probe, run_job,
 };
 
@@ -134,7 +134,7 @@ fn scramble_then_restore_round_trips_through_ffmpeg() {
         height: 1280,
         tile: 16,
         margin: 4,
-        seed: "veilcast".into(),
+        seed: "vatrix".into(),
         invert: false,
         intro: false,
         seed_in_intro: false,
@@ -153,7 +153,7 @@ fn scramble_then_restore_round_trips_through_ffmpeg() {
         (scrambled.upload_width, scrambled.upload_height),
         (1080, 1920)
     );
-    assert!(scrambled.output.ends_with("source.veilcast-t16m4.mp4"));
+    assert!(scrambled.output.ends_with("source.vatrix-t16m4.mp4"));
     assert!(
         progress
             .last()
@@ -207,7 +207,7 @@ fn intro_qr_survives_metadata_loss_and_a_low_resolution_transcode() {
         height: 1280,
         tile: 40,
         margin: 0,
-        seed: "veilcast".into(),
+        seed: "vatrix".into(),
         invert: false,
         intro: true,
         seed_in_intro,
@@ -277,8 +277,8 @@ fn intro_qr_survives_metadata_loss_and_a_low_resolution_transcode() {
     );
     assert_eq!(
         hint.seed.as_deref(),
-        Some("9859592623650262946"),
-        "seed_from_text(\"veilcast\")"
+        Some("6992875867042984907"),
+        "seed_from_text(\"vatrix\")"
     );
 
     // Restore from the stripped file: the intro is skipped and the picture returns to 720×1280.
@@ -331,7 +331,7 @@ fn intro_qr_survives_metadata_loss_and_a_low_resolution_transcode() {
         .hint
         .expect("QR readable after 360p transcode");
     assert_eq!((hint.width, hint.height, hint.tile), (720, 1280, 40));
-    assert_eq!(hint.seed.as_deref(), Some("9859592623650262946"));
+    assert_eq!(hint.seed.as_deref(), Some("6992875867042984907"));
 
     // Files without an intro are untouched: the original clip yields no hint.
     assert!(info.hint.is_none());
@@ -369,7 +369,7 @@ fn gpu_jobs_use_the_detected_hardware_encoder_or_fall_back_to_x264() {
         height: 1280,
         tile: 40,
         margin: 0,
-        seed: "veilcast".into(),
+        seed: "vatrix".into(),
         invert: false,
         intro: true,
         seed_in_intro: false,

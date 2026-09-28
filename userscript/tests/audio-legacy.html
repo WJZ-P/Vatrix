@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <meta charset="utf-8">
-<title>VeilCast audio restoration check</title>
+<title>Vatrix audio restoration check</title>
 <style>
   body { background: #111827; color: #e5e7eb; font: 14px/1.5 system-ui,sans-serif; margin: 24px; }
   .bpx-player-primary-area { position: relative; width: 360px; height: 640px; background: #000; }
@@ -14,7 +14,7 @@
   li { margin: 2px 0; }
 </style>
 <h1>旧格式（频谱翻转 + 分块倒放）：浏览器下载还原</h1>
-<p>先跑 <code>cargo test -p veilcast-app --test audio_pipeline</code>：它把 0.2.0 格式（频谱翻转 + 250 ms 倒放）的加密文件再按 AAC 64k 转一遍，
+<p>先跑 <code>cargo test -p vatrix-app --test audio_pipeline</code>：它把 0.2.0 格式（频谱翻转 + 250 ms 倒放）的加密文件再按 AAC 64k 转一遍，
    生成 <code>platform.mp4</code>（元数据已抹）和 B 站式的纯音频分片 <code>platform.m4s</code>。
    第一部分直接检验解码、找栅格、倒回来的结果；第二部分检验油猴脚本读到片头后自动下载、还原并同步播放。</p>
 <div id="arc_toolbar_report"><div class="video-toolbar-left">
@@ -26,19 +26,19 @@
 <ol id="steps"></ol>
 <p id="summary">测试运行中…</p>
 <script>
-  const saved = new Map([['veilcast.bilibili.settings.v1', { width: 100, height: 100, tile: 2, margin: 0, seed: 'wrong', invert: false, autoIntro: true, audioMs: 0 }]]);
+  const saved = new Map([['vatrix.bilibili.settings.v1', { width: 100, height: 100, tile: 2, margin: 0, seed: 'wrong', invert: false, autoIntro: true, audioMs: 0 }]]);
   window.GM_getValue = (key, fallback) => saved.get(key) ?? fallback;
   window.GM_setValue = (key, value) => saved.set(key, structuredClone(value));
   window.GM_registerMenuCommand = () => 1;
   window.GM_unregisterMenuCommand = () => {};
   // ?activate: the harness clicks the page first (CDP_CLICK=1), which is what
   // lets the script silence the page by capture instead of by muting.
-  window.veilcastActivate = new URLSearchParams(location.search).has('activate');
-  history.replaceState({}, '', '/video/veilcast-audio-legacy-fixture/');
+  window.vatrixActivate = new URLSearchParams(location.search).has('activate');
+  history.replaceState({}, '', '/video/vatrix-audio-legacy-fixture/');
 </script>
-<script src="/userscript/veilcast.user.js"></script>
+<script src="/userscript/vatrix.user.js"></script>
 <script type="module">
-  import { findAudioSync, mirrorAudioSpectrum, reverseAudioBlocks } from '/viewer/veilcast.js';
+  import { findAudioSync, mirrorAudioSpectrum, reverseAudioBlocks } from '/viewer/vatrix.js';
 
   const FIXTURES = '/target/tmp/audio-job-legacy';
   const SOURCE = '/target/experiment/d49672a5defc39413b8979e3dfb5f134-yuv420p/source.mp4';
@@ -101,10 +101,10 @@
 
     // Part 2: the userscript reads the intro, fetches, restores and plays.
     const video = document.querySelector('video');
-    const ui = () => document.getElementById('veilcast-userscript-ui');
+    const ui = () => document.getElementById('vatrix-userscript-ui');
     const panel = () => ui()?.shadowRoot;
     await until(() => ui(), 'the panel to mount');
-    if (window.veilcastActivate) await until(() => navigator.userActivation.hasBeenActive, 'the harness click');
+    if (window.vatrixActivate) await until(() => navigator.userActivation.hasBeenActive, 'the harness click');
     const expectedMode = navigator.userActivation?.hasBeenActive ? 'captured' : 'muted';
     video.src = `${FIXTURES}/platform.mp4`;
     await video.play();
@@ -116,7 +116,7 @@
     await until(() => ['captured', 'muted'].includes(ui().dataset.audioMode), 'successful audio handoff');
     assert(ui().dataset.audioMode === expectedMode, `silenced by ${ui().dataset.audioMode}, expected ${expectedMode}`);
     assert(video.muted === (expectedMode === 'muted'), `video.muted is ${video.muted} in ${expectedMode} mode`);
-    const audio = panel().querySelector('audio[data-veilcast-audio]');
+    const audio = panel().querySelector('audio[data-vatrix-audio]');
     assert(audio?.src.startsWith('blob:'), 'restored audio plays from a blob');
     pass(`片头二维码 → 块长 250 ms → 自动下载并还原（原声静音方式：${expectedMode}）：${panel().getElementById('audio-status').textContent}`);
 
@@ -152,7 +152,7 @@
     // Turning restoration off hands the sound back to the page.
     panel().getElementById('toggle').click();
     await until(() => ui().dataset.enabled === 'false' && ui().dataset.audio === 'off', 'restoration to switch off');
-    assert(panel().querySelector('audio[data-veilcast-audio]') === audio && audio.paused, 'the restored audio is cached and paused');
+    assert(panel().querySelector('audio[data-vatrix-audio]') === audio && audio.paused, 'the restored audio is cached and paused');
     assert(!video.muted, 'the page gets its sound back');
     const resumed = video.currentTime;
     await sleep(500);
@@ -161,7 +161,7 @@
     const cachedSource = audio.src;
     panel().getElementById('toggle').click();
     await until(() => ui().dataset.enabled === 'true' && !audio.paused, 'cached audio to resume');
-    assert(panel().querySelector('audio[data-veilcast-audio]') === audio, 'reuse the same media element');
+    assert(panel().querySelector('audio[data-vatrix-audio]') === audio, 'reuse the same media element');
     assert(audio.src === cachedSource, 'reuse the restored WAV');
     assert(Math.abs(audio.currentTime - video.currentTime) < 0.25, 'resume at the current video position');
     pass('再次启用复用同一还原音轨，并对齐当前播放进度');

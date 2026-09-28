@@ -17,8 +17,8 @@ function pngSize(bytes) {
 test('the icon master is the selected v3 artwork, only its tile made fully opaque', async () => {
   const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
   // Replacing the artwork means updating both hashes (see assets/branding/README.md).
-  assert.equal(sha256(await read('assets/branding/veilcast-icon-v3-source.png')), 'e5ca2d46c9703d73c16df98db34e9d53f7147c7440fff6d7174df4e160844f07');
-  const master = await read('assets/branding/veilcast-icon.png');
+  assert.equal(sha256(await read('assets/branding/vatrix-icon-v3-source.png')), 'e5ca2d46c9703d73c16df98db34e9d53f7147c7440fff6d7174df4e160844f07');
+  const master = await read('assets/branding/vatrix-icon.png');
   assert.equal(sha256(master), 'a18b962a473ab2a1956381c4edbe81aa81404df0e544890565e46c4e2eae7cf9');
   assert.deepEqual(pngSize(master), [1024, 1024]);
 });
@@ -77,7 +77,7 @@ test('the app favicon and title use the same icon as the script toolbar', async 
 });
 
 test('userscript metadata and toolbar embed the generated PNGs without a remote URL', async () => {
-  const bundle = (await read('userscript/veilcast.user.js')).toString();
+  const bundle = (await read('userscript/vatrix.user.js')).toString();
   for (const [field, file, size] of [['icon', '32x32.png', 32], ['icon64', '64x64.png', 64]]) {
     const match = bundle.match(new RegExp(`^// @${field}\\s+(data:image/png;base64,([A-Za-z0-9+/=]+))\\r?$`, 'm'));
     assert.ok(match, field);

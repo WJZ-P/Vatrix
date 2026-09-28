@@ -68,7 +68,7 @@ test('description import requires every labelled field and validates before appl
 });
 
 test('installable artifact is standalone, scoped and contains current defaults', async () => {
-  const bundle = await readFile(new URL('../veilcast.user.js', import.meta.url), 'utf8');
+  const bundle = await readFile(new URL('../vatrix.user.js', import.meta.url), 'utf8');
   new Script(bundle);
   assert.match(bundle, /@match\s+https:\/\/www\.bilibili\.com\/video\/\*/);
   assert.match(bundle, /@noframes/);
@@ -99,11 +99,11 @@ test('description inversion is optional; explicit invalid values are rejected', 
 });
 
 test('a page remembers only the plan, and the intro source is sticky', () => {
-  const plan = { width: 720, height: 1280, tile: 40, margin: 0, seed: '9859592623650262946', invert: false, autoIntro: true };
+  const plan = { width: 720, height: 1280, tile: 40, margin: 0, seed: '6992875867042984907', invert: false, autoIntro: true };
   const key = '/video/BV1xx/?p=1';
   let pages = rememberPageSettings({}, key, plan, 'intro', { now: 1000 });
   assert.deepEqual(pageSettings(pages, key), {
-    settings: { width: 720, height: 1280, tile: 40, margin: 0, seed: '9859592623650262946', invert: false },
+    settings: { width: 720, height: 1280, tile: 40, margin: 0, seed: '6992875867042984907', invert: false },
     source: 'intro',
     savedAt: 1000,
   });

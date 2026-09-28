@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createRestorer } from '../../viewer/veilcast.js';
+import { createRestorer } from '../../viewer/vatrix.js';
 
 function mockGl({ compileFailure = 0, linkFailure = false, textureFailure = 0, uploadFailure = false } = {}) {
   const shaders = new Set();

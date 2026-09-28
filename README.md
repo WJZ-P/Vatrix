@@ -1,4 +1,25 @@
-# VeilCast Core
+# Vatrix（混映）
+
+把视频画面切成小方块打乱后再上传到视频网站，装了浏览器脚本的观众能实时看到原画面，其他人只看到一片方块。
+声音也可以一起扰乱，片头一秒的二维码记录还原所需的参数，所以观众不用手动填写。
+
+- **桌面端**（`app/`，Tauri）：拖入视频 → 打乱画面（可选反色、声音频谱翻转）→ 加上片头二维码 → 输出可直接上传的 mp4。
+- **浏览器脚本**（`userscript/vatrix.user.js`，油猴）：在 B 站播放页读取片头二维码，用 WebGL2 还原画面、实时还原声音。
+- **核心库**（仓库根目录，`vatrix-core`）：分块排列、片头协议和音频变换，桌面端和浏览器端逐位一致。
+
+这是可逆的扰乱，不是加密：知道参数的人都能还原。平台会重新编码和缩放上传的视频，整套设计围绕"转码之后仍能还原到可看"展开。
+
+## 快速开始
+
+```text
+scripts/fetch-ffmpeg.ps1              # 下载 ffmpeg 到 tools/ffmpeg（桌面端以子进程调用）
+cd app && npm install && npm run tauri   # 开发模式启动桌面端
+```
+
+浏览器端：在油猴里安装 `userscript/vatrix.user.js`，打开用桌面端加密并上传的 B 站视频即可。
+各部分的细节见 [app/README.md](app/README.md) 和 [userscript/README.md](userscript/README.md)。
+
+## 核心库
 
 视频画面分块重排的 Rust 核心库，配套 ffmpeg 流水线实验和浏览器端 WebGL2 还原器。
 
@@ -13,15 +34,15 @@
   编码器和缩放在块边缘产生的伪影落在被丢弃的边上，这是画质的关键。
 - **种子排列**：`seeded_permutation(tile_count, seed)`，splitmix64 + Fisher-Yates，
   两端各自生成，排列本身不传输；`seed_from_text` 把用户输入的数字或文字变成种子（FNV-1a 64）。
-  `viewer/veilcast.js` 有逐位一致的 JS 实现。
+  `viewer/vatrix.js` 有逐位一致的 JS 实现。
 - **片头协议**：`IntroHeader` 把宽高、tile、margin、反色、音频块长、频谱翻转和可选 seed 编成一串定长纯数字（22 或 42 位，
   末两位是 mod 97 校验），供桌面端渲染成 1 秒二维码片头、浏览器端扫码后自动配置。布局见 `src/header.rs`，
-  `viewer/veilcast.js` 的 `encodeIntroHeader` / `parseIntroHeader` 逐位一致。
+  `viewer/vatrix.js` 的 `encodeIntroHeader` / `parseIntroHeader` 逐位一致。
 - 同一计划复用于多帧，逐帧阶段零堆分配；调用方持有独立的输入、输出缓冲区。
 
 - **音频扰乱**：`SpectrumMirror` 把 164 Hz–10 kHz 上下颠倒（f → 10171.875 Hz − f，藏住音高和音色，听不出是谁在说话），
   自身的逆。新文件只做翻转，音轨整体提前 `MIRROR_STREAM_LATENCY`（8192 样本 ≈ 171 ms），浏览器用固定延迟的流式翻转
-  （`viewer/veilcast.js` 的 `createMirrorStream`）在视频自己的声音上实时还原，正好回到与画面同步。
+  （`viewer/vatrix.js` 的 `createMirrorStream`）在视频自己的声音上实时还原，正好回到与画面同步。
   旧格式还做过 `reverse_blocks` 块内倒放（0.2.0 起倒放后再翻转，片头带 `sync_chirp` 同步扫频音），仍可还原。
   加密和还原两端都去掉 `MIRROR_TREBLE_CUT_HZ`（9.7 kHz）以上：频段边缘的 STFT 泄漏和有损编码的噪声经翻转后都落在那里，
   不切的话重低音会变成 10 kHz 的持续啸叫（实测比原声高 20 dB）。
@@ -45,9 +66,9 @@
 ## 最小用法
 
 ```rust
-use veilcast_core::{FrameLayout, PixelFormat, ShufflePlan, seeded_permutation};
+use vatrix_core::{FrameLayout, PixelFormat, ShufflePlan, seeded_permutation};
 
-fn main() -> Result<(), veilcast_core::Error> {
+fn main() -> Result<(), vatrix_core::Error> {
     // 4×2 灰度帧，切为 4 个 2×1 tile，每个 tile 带 1 像素保护边。
     let layout = FrameLayout::new(4, 2, PixelFormat::Gray8, 4)?;
     let permutation = seeded_permutation(4, 20260916);
@@ -112,7 +133,7 @@ psnr/ssim 的参考就此被改掉；Matroska 把 1/30 s 舍入到毫秒，按�
 
 ## 浏览器端还原
 
-`viewer/veilcast.js`：`seededPermutation` 与 Rust 逐位一致（`node --test viewer/*.test.mjs` 对拍已知答案向量），
+`viewer/vatrix.js`：`seededPermutation` 与 Rust 逐位一致（`node --test viewer/*.test.mjs` 对拍已知答案向量），
 `createRestorer(gl, {width, height, tile, margin, seed})` 用一个 fragment shader 完成还原；
 `width`/`height` 是原始尺寸，网格按补齐到 tile 整数倍的工作尺寸计算，和桌面端一致。
 采样在上传尺寸的归一化坐标里进行，平台缩放视频不影响 tile 网格；bilinear 采样跨过 tile 内边时落在 margin 上，
@@ -123,10 +144,10 @@ psnr/ssim 的参考就此被改掉；Matroska 把 1/30 s 舍入到毫秒，按�
 
 ## B 站油猴插件
 
-`userscript/veilcast.user.js` 是可直接安装的单文件脚本，仅匹配 `https://www.bilibili.com/video/*`。
+`userscript/vatrix.user.js` 是可直接安装的单文件脚本，仅匹配 `https://www.bilibili.com/video/*`。
 通过 `.bpx-player-primary-area video` 定位播放器，在原视频层叠加 WebGL2 还原画面，保留原播放器控制。
 默认 `seed="20040821"`、`tile=40`、`margin=0`；`tail` 作为 `tile` 的兼容别名。
-默认值与 Tauri 共用 `app/src/default-settings.json`，构建脚本内联 `viewer/veilcast.js`，不加载远程依赖。
+默认值与 Tauri 共用 `app/src/default-settings.json`，构建脚本内联 `viewer/vatrix.js`，不加载远程依赖。
 读到片头二维码后按 BVID 记住该视频的参数，下次打开（哪怕从中途开始）直接还原；把进度条拖回片头会重新扫码。
 桌面端开了音频加扰时，脚本把视频自己的声音接入 AudioWorklet 实时翻回来，B 站的音量、静音、暂停、跳转照常可用；
 旧格式（分块倒放）的视频则下载音轨、对齐块栅格、还原后与画面同步播放。

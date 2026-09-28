@@ -1,7 +1,7 @@
-# VeilCast 桌面端
+# Vatrix 桌面端
 
 Tauri 2 + React 19 + TypeScript，样式用 Linaria（`@linaria/react` 的 `styled` 语法，构建期提取为静态 CSS，零运行时）。
-Rust 壳在 `src-tauri/`，是根 workspace 的成员，通过 path 依赖 `veilcast-core`。
+Rust 壳在 `src-tauri/`，是根 workspace 的成员，通过 path 依赖 `vatrix-core`。
 
 ## 命令
 
@@ -12,10 +12,10 @@ npm run build        # 只构建前端到 dist/（tsc + vite）
 npm run tauri build  # 打包安装程序
 ```
 
-在仓库根目录 `cargo build -p veilcast-app` / `cargo clippy --workspace` 也能编译壳。
+在仓库根目录 `cargo build -p vatrix-app` / `cargo clippy --workspace` 也能编译壳。
 
 仅生成可独立运行的程序、不创建安装包：先在 `app/` 执行 `npm run build`，再在仓库根目录执行
-`cargo build --release -p veilcast-app --features tauri/custom-protocol`。
+`cargo build --release -p vatrix-app --features tauri/custom-protocol`。
 `custom-protocol` 用于内嵌已构建的前端，避免依赖 Vite 开发服务器。
 
 开发端口是 5173/5174 而不是 Tauri 模板默认的 1420：Windows 的 Hyper-V 会保留 1331–1430 这一段，
@@ -30,15 +30,15 @@ npm run tauri build  # 打包安装程序
 
 - **任意尺寸都能处理**：宽高不是 tile 的整数倍时，打乱前把右边和下边补到整数倍（复制边缘像素，不是黑边），
   解密后裁回原尺寸。1920×1078 + tile 40 → 补 2 行按 1920×1080 处理。核心库本身仍要求整除，补边只在应用层。
-- 加密输出命名 `<原名>.veilcast-t<tile>m<margin>.mp4`，音轨原样复制，并在 mp4 的 comment 元数据里写入
-  `veilcast/1 width= height= tile= margin= source=WxH invert=0/1 intro= audio= mirror=0/1`（width/height 是补齐后的工作尺寸，source 是原尺寸，不含 seed）。
+- 加密输出命名 `<原名>.vatrix-t<tile>m<margin>.mp4`，音轨原样复制，并在 mp4 的 comment 元数据里写入
+  `vatrix/1 width= height= tile= margin= source=WxH invert=0/1 intro= audio= mirror=0/1`（width/height 是补齐后的工作尺寸，source 是原尺寸，不含 seed）。
   开启反色时文件名增加 `-inv` 后缀，避免与相同参数的非反色输出混淆。
   再把这个文件拖回来，程序会自动认出并填好几何参数和反色状态；旧文件没有 invert 字段时默认关闭。
-- **片头二维码**（默认开）：加密时在最前面加 1 秒片头：深蓝底，顶部是 logo 和“VeilCast”，下方白色圆角卡片里是二维码
+- **片头二维码**（默认开）：加密时在最前面加 1 秒片头：深蓝底，顶部是 logo 和“Vatrix”，下方白色圆角卡片里是二维码
   （H 级纠错，卡片连同静区占短边 60%），三者从第一帧起同时出现。所有尺寸按画面短边计算、整组上下居中，
   横屏、竖屏、方形、超宽屏都是同一构图；画面太小（logo 不足 24 像素）时只画二维码卡片。
   logo 和字标是 `app/src-tauri/assets/` 下的 QOI 图片（`node scripts/generate-intro-assets.mjs` 从图标母版和 Segoe UI Bold 生成），
-  由 `intro.rs` 自带的解码器读入、缩放后按透明度直接画进 YUV；`cargo run -p veilcast-app --example intro_preview -- 2560x1376 720x1280`
+  由 `intro.rs` 自带的解码器读入、缩放后按透明度直接画进 YUV；`cargo run -p vatrix-app --example intro_preview -- 2560x1376 720x1280`
   可导出各尺寸的预览图。二维码内容是核心库的 `IntroHeader`
   纯数字串——原始宽高、tile、margin、反色、音频加扰方式，勾选"把 seed 也写进二维码"后还包含数值化的 seed。
   音轨相应延后 1 秒（重编码为 AAC）。解密时自动跳过片头并把音轨裁回，输出时长与原片一致。
@@ -61,12 +61,12 @@ npm run tauri build  # 打包安装程序
   （2560×1376 混淆内容实测约 270 fps，此时瓶颈变成管道本身）；AMF 用 cqp 17/19，Ryzen 核显上质量略低于 x264；QSV 未实测。
   整条管道不用 GPU 做别的事，解码和分块复制都在 CPU，占比不到 5%。
 - seed 可以是数字或任意文字，规则见核心库 `seed_from_text`。
-- 启动时可通过第一个命令行参数或 `VEILCAST_OPEN` 环境变量直接打开一个视频。
+- 启动时可通过第一个命令行参数或 `VATRIX_OPEN` 环境变量直接打开一个视频。
 - 参数保存在 localStorage，下次打开沿用。
 - **反色默认关闭**，还原方必须与加密方一致。启用时先统一为有限范围 YUV，再在 Rust 中原地反色；输出标记为有限范围。
   首版面向 SDR；检测到 PQ/HLG 标记的 HDR 输入时提示先转 SDR。超范围样本会裁剪，不承诺有损编码后的逐字节还原。
 
-ffmpeg 的查找顺序：`VEILCAST_FFMPEG_DIR` → 可执行文件旁边 → 开发仓库的 `tools/ffmpeg` → PATH。
+ffmpeg 的查找顺序：`VATRIX_FFMPEG_DIR` → 可执行文件旁边 → 开发仓库的 `tools/ffmpeg` → PATH。
 打包时的 sidecar 配置还没做。
 
 ## 结构

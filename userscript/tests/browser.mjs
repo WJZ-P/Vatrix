@@ -12,9 +12,9 @@ function pass(message) {
   item.textContent = message;
   results.append(item);
 }
-const panel = () => document.getElementById('veilcast-userscript-ui')?.shadowRoot;
-const restored = () => document.querySelector('canvas[data-veilcast-restored]');
-const isEnabled = () => document.getElementById('veilcast-userscript-ui')?.dataset.enabled === 'true';
+const panel = () => document.getElementById('vatrix-userscript-ui')?.shadowRoot;
+const restored = () => document.querySelector('canvas[data-vatrix-restored]');
+const isEnabled = () => document.getElementById('vatrix-userscript-ui')?.dataset.enabled === 'true';
 const toolbarMarkup = '<div class="video-toolbar-left-main"><button>点赞</button><button>投币</button><button>收藏</button><button>分享</button></div><div class="video-owner-state">编辑 · 更多</div>';
 let video;
 let source;
@@ -51,8 +51,8 @@ try {
     `<div id="arc_toolbar_report"><div class="video-toolbar-left">${toolbarMarkup}</div></div>
      <div id="v_desc">原始宽${info.params.width}，高${info.params.height} tile ${info.params.tile} margin ${info.params.margin} seed ${info.params.seed}<br>混淆前6M，混淆后60M，解码后19M</div>`);
   await until(() => panel() && video.readyState >= 2, 'late player discovery');
-  assert(document.querySelector('.video-toolbar-left-main').nextElementSibling.id === 'veilcast-userscript-ui', 'button immediately after share group');
-  assert(!document.querySelector('.bpx-player-primary-area #veilcast-userscript-ui'), 'no settings UI covering the player');
+  assert(document.querySelector('.video-toolbar-left-main').nextElementSibling.id === 'vatrix-userscript-ui', 'button immediately after share group');
+  assert(!document.querySelector('.bpx-player-primary-area #vatrix-userscript-ui'), 'no settings UI covering the player');
   assert(!isEnabled() && restored().style.visibility === 'hidden', 'must start disabled');
   assert(!panel().querySelector('[name=invert]').checked, 'legacy defaults keep inversion off');
   for (const [name, value] of Object.entries({ seed: '20040821', tile: '40', margin: '0', width: '720', height: '1280' })) {
@@ -114,7 +114,7 @@ try {
   panel().querySelector('form').requestSubmit();
   await new Promise((resolve) => video.requestVideoFrameCallback(resolve));
   pass(`Rust YUV 反色 → H.264 → 浏览器 shader 还原，RGB 最大误差 ${comparePixels(12)}`);
-  assert(saved.get('veilcast.bilibili.settings.v1').invert === true, 'persist inversion as a boolean');
+  assert(saved.get('vatrix.bilibili.settings.v1').invert === true, 'persist inversion as a boolean');
   video.removeAttribute('src');
   video.srcObject = stream;
   video.loop = false;
@@ -123,10 +123,10 @@ try {
   panel().querySelector('form').requestSubmit();
   await new Promise((resolve) => video.requestVideoFrameCallback(resolve));
   comparePixels(8);
-  assert(saved.get('veilcast.bilibili.settings.v1').invert === false, 'unchecked state must be saved as false');
+  assert(saved.get('vatrix.bilibili.settings.v1').invert === false, 'unchecked state must be saved as false');
   pass('反色开关保存布尔值；取消勾选后恢复旧视频的正常还原');
   const existingCanvas = restored();
-  const existingUi = document.getElementById('veilcast-userscript-ui');
+  const existingUi = document.getElementById('vatrix-userscript-ui');
   panel().querySelector('[name=seed]').value = 'unsaved draft';
   document.querySelector('.video-toolbar-left').innerHTML = toolbarMarkup;
   await until(() => document.querySelector('.video-toolbar-left-main').nextElementSibling === existingUi, 'toolbar replacement');
@@ -171,8 +171,8 @@ try {
   await video.play();
   await until(() => restored() !== oldCanvas && restored()?.style.visibility === 'visible', 'replacement video');
   assert(!oldCanvas.isConnected, 'old canvas removed');
-  assert(document.querySelectorAll('#veilcast-userscript-ui').length === 1, 'one panel');
-  assert(document.querySelectorAll('canvas[data-veilcast-restored]').length === 1, 'one canvas');
+  assert(document.querySelectorAll('#vatrix-userscript-ui').length === 1, 'one panel');
+  assert(document.querySelectorAll('canvas[data-vatrix-restored]').length === 1, 'one canvas');
   comparePixels(12);
   pass('播放器更换 video 后重绑并清理旧画布；rAF 兼容路径通过');
 
@@ -188,7 +188,7 @@ try {
   comparePixels(12);
   pass('WebGL 上下文丢失时保留原画面，恢复后可重新启用');
 
-  history.pushState({}, '', '/video/veilcast-local-fixture/?p=2');
+  history.pushState({}, '', '/video/vatrix-local-fixture/?p=2');
   await until(() => !isEnabled(), 'SPA part change');
   assert(restored().style.visibility === 'hidden', 'new page remains original');
   assert(panel().querySelector('[name=tile]').value === '16', 'saved configuration retained');

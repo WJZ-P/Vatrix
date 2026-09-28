@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createRealtimeMirror, mirrorWorkletSource } from '../src/audio.js';
-import { createMirrorStream } from '../../viewer/veilcast.js';
+import { createMirrorStream } from '../../viewer/vatrix.js';
 
 const flush = async () => { for (let i = 0; i < 5; i++) await new Promise((resolve) => setImmediate(resolve)); };
 
@@ -69,7 +69,7 @@ test('the video sound goes through the mirror, frozen while paused and reset on 
   const [context] = r.env.contexts;
   const [node] = r.env.nodes;
   assert.equal(r.env.modules.length, 1, 'the worklet module is loaded once');
-  assert.equal(node.name, 'veilcast-mirror');
+  assert.equal(node.name, 'vatrix-mirror');
   assert.deepEqual(node.options.outputChannelCount, [2]);
   assert.deepEqual(context.source.targets, [node]);
   assert.deepEqual(node.targets, [context.destination]);
@@ -155,7 +155,7 @@ test('the generated worklet module runs the mirror stream and holds it while sto
   let Processor;
   class AudioWorkletProcessor { constructor() { this.port = {}; } }
   new Function('registerProcessor', 'AudioWorkletProcessor', mirrorWorkletSource(createMirrorStream, 8192))(
-    (name, processor) => { assert.equal(name, 'veilcast-mirror'); Processor = processor; }, AudioWorkletProcessor);
+    (name, processor) => { assert.equal(name, 'vatrix-mirror'); Processor = processor; }, AudioWorkletProcessor);
   const processor = new Processor();
   const tone = (n) => Float32Array.from({ length: 128 }, (_, i) => Math.sin((2 * Math.PI * 1000 * (n * 128 + i)) / 48000));
   const out = () => [new Float32Array(128), new Float32Array(128)];
