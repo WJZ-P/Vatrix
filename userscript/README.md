@@ -176,6 +176,11 @@ URL 参数会进入站点请求和浏览器历史；需要保密的 seed 应在�
 - 反色合并在原有 shader 中：采样、逆重排、丢弃 margin 后按开关执行 `1-RGB`，不改 alpha；参数持久化保存明确的布尔值。
   与桌面端的有限范围 SDR YUV 反色对应。开关不一致时会显示负片，旧视频应保持关闭。
 - 入口紧接 `#arc_toolbar_report .video-toolbar-left-main`，不再覆盖在视频右上角。
+  **要等页面 hydration 之后才插入**：B 站视频页由 Vue 在服务端渲染，播放器开始播放约一秒后页面才 hydrate；
+  这时服务端渲染的工具栏里多出任何节点，hydration 都会失败，Vue 整页重新渲染，播放器容器随之被替换，
+  页面的 `checkBofqi` 发现播放器没了就重建它，视频从 0 重播。脚本等 `#app` 的 `data-server-rendered`
+  消失（Vue 开始 hydration 时移除它，且 hydration 同步完成）再放按钮，30 秒兜底。播放器内的还原画布不在服务端渲染的
+  DOM 里，照常立即挂载，片头第一秒不会漏读。
   使用 `dialog.showModal()` 的浏览器顶层显示设置窗口，避开播放器/工具栏的 overflow 和层叠裁剪；工具栏重建时自动迁移入口并保留表单草稿。
 - Canvas 在视频容器内且 `pointer-events:none`，保留外层控制栏和弹幕的层次；还原画面适配容器缩放与播放器容器全屏。
   全屏切换会关闭设置窗口，常规工具栏入口留在视频外；可退出全屏调整参数。
@@ -223,6 +228,8 @@ node viewer/serve.mjs 8767
 停用交还原声、再启用恢复。需要允许自动播放（无头浏览器加 `--autoplay-policy=no-user-gesture-required`，测试时加 `--mute-audio` 不出声）。
 `userscript/tests/audio-legacy.html` 检查旧格式的下载还原：扫频音对齐、翻回和倒放，读片头后自动下载还原、跟随暂停和跳转、停用后交还声音。
 不带参数打开走"静音视频"路径；加 `?activate` 并先点一下页面，走零增益 Web Audio 路径。
+`userscript/tests/hydration.html` 模拟带 `data-server-rendered` 的页面：hydration 前工具栏必须原样不动、还原画面照常工作，
+标记消失后按钮立即出现在分享右侧。
 `userscript/tests/intro-memory.html` 用同一个文件检查倒带与记忆：从第 3 秒开始播放时不还原，拖回片头后自动读码并记住参数，
 切到别的视频不继承状态，切回来时即使播放头已过片头也直接用记忆参数还原。
 测试会自动检查默认值、延迟挂载、分享右侧位置、模态窗口/关闭操作、简介导入、工具栏重建、像素还原、margin/裁剪、半尺寸视频、暂停、节点替换、rAF、上下文恢复及 SPA 切换。

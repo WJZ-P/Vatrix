@@ -21,6 +21,17 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
   // video was navigated to can belong to it.
   const audioUrls = audio?.watchAudioUrls();
   let navigatedAt = 0;
+  // Bilibili renders its pages on the server with Vue and hydrates them only
+  // after the player has started. A node of ours inside that server-rendered
+  // markup makes hydration fail; Vue then renders the whole page again, the
+  // player container goes with it, and the page's player check (checkBofqi)
+  // rebuilds the player, so the video restarts from 0. Vue removes
+  // data-server-rendered from its root as hydration starts, and hydration is
+  // synchronous, so the toolbar button waits for that attribute to go. The
+  // player's own DOM is not server-rendered: the canvas mounts at once, so the
+  // intro in the first second is still read.
+  const hydrationDeadline = Date.now() + 30000;
+  const hydrated = () => !document.querySelector('[data-server-rendered]') || Date.now() > hydrationDeadline;
 
   /** This page's remembered plan, ignored when it no longer validates. */
   function pageMemory() {
@@ -166,7 +177,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     shadow.getElementById('build-version').textContent = `v${scriptVersion}`;
     if (iconUrl) brandIcon.src = iconUrl;
     else brandIcon.hidden = true;
-    toolbar.after(ui);
+    if (hydrated()) toolbar.after(ui);
     const form = shadow.querySelector('form');
     const dialog = shadow.getElementById('panel');
     const status = shadow.getElementById('status');
@@ -576,7 +587,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     return {
       video, wrapper, area, ui, canvas, open,
       place(anchor) {
-        if (anchor.nextElementSibling === ui) return;
+        if (anchor.nextElementSibling === ui || !hydrated()) return;
         const reopen = dialog.open;
         open(false);
         anchor.after(ui);
@@ -634,13 +645,14 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
   const observer = new MutationObserver((records) => {
     if (active && (!active.video.isConnected || !active.ui.isConnected || !active.canvas.isConnected)) queueScan();
     for (const record of records) {
+      if (record.type === 'attributes') queueScan(); // hydration: the button may join the toolbar now
       for (const node of record.addedNodes) {
         const relevant = 'video, .bpx-player-primary-area, #arc_toolbar_report, .video-toolbar-left-main';
         if (node.nodeType === 1 && (node.matches(relevant) || node.querySelector(relevant))) queueScan();
       }
     }
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-server-rendered'] });
   // URL changes from history.pushState have no native event. Also recover when
   // a preloaded player becomes visible without replacing its video node.
   const timer = setInterval(queueScan, 1000);

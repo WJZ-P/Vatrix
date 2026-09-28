@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>Vatrix userscript waits for Vue hydration</title>
+<style>
+  body { background: #111827; color: #e5e7eb; font: 14px/1.5 system-ui,sans-serif; margin: 24px; }
+  .bpx-player-primary-area { position: relative; width: 360px; height: 640px; background: #000; }
+  .bpx-player-video-area, .bpx-player-video-perch, .bpx-player-video-wrap { position: relative; width: 100%; height: 100%; }
+  video { width: 100%; height: 100%; object-fit: contain; }
+  .video-toolbar-left { display: flex; align-items: center; }
+  .video-toolbar-left-main { display: flex; gap: 24px; }
+  [data-result=pass] { color: #86efac; }
+  [data-result=fail] { color: #fca5a5; }
+  li { margin: 2px 0; }
+</style>
+<h1>服务端渲染页面：等 hydration 之后再把按钮放进工具栏</h1>
+<p>B 站视频页由 Vue 在服务端渲染，播放器开始播放之后才 hydrate。hydration 之前往服务端渲染的工具栏里插节点会让它失败，
+   Vue 随后整页重新渲染，页面的 checkBofqi 重建播放器，视频从 0 重播。本页模拟带 <code>data-server-rendered</code> 的根节点：
+   按钮必须等标记消失后才进入工具栏，而播放器里的还原画面和片头读取不受影响。
+   需要先跑 <code>cargo test -p vatrix-app --test pipeline</code> 生成 <code>target/tmp/pipeline-intro/low.mp4</code>。</p>
+<div id="app" data-server-rendered="true">
+  <div id="arc_toolbar_report"><div class="video-toolbar-left">
+    <div class="video-toolbar-left-main"><button>点赞</button><button>投币</button><button>收藏</button><button>分享</button></div>
+  </div></div>
+  <div class="bpx-player-primary-area"><div class="bpx-player-video-area"><div class="bpx-player-video-perch">
+    <div class="bpx-player-video-wrap"><video muted playsinline src="/target/tmp/pipeline-intro/low.mp4"></video></div>
+  </div></div></div>
+</div>
+<ol id="steps"></ol>
+<p id="summary">测试运行中…</p>
+<script>
+  const saved = new Map();
+  window.GM_getValue = (key, fallback) => saved.get(key) ?? fallback;
+  window.GM_setValue = (key, value) => saved.set(key, structuredClone(value));
+  window.GM_registerMenuCommand = () => 1;
+  window.GM_unregisterMenuCommand = () => {};
+  history.replaceState({}, '', '/video/vatrix-hydration-fixture/');
+</script>
+<script src="/userscript/vatrix.user.js"></script>
+<script type="module">
+  const summary = document.getElementById('summary');
+  const steps = document.getElementById('steps');
+  const pass = (text) => steps.insertAdjacentHTML('beforeend', `<li>${text}</li>`);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const assert = (condition, message) => { if (!condition) throw new Error(message); };
+  async function until(check, label, timeoutMs = 10000) {
+    for (let waited = 0; waited < timeoutMs; waited += 50) {
+      if (check()) return;
+      await sleep(50);
+    }
+    throw new Error(`timed out waiting for ${label}`);
+  }
+  try {
+    const app = document.getElementById('app');
+    const main = document.querySelector('.video-toolbar-left-main');
+    const toolbarBefore = main.parentElement.innerHTML;
+    const video = document.querySelector('video');
+    await video.play();
+
+    // Before hydration: nothing of ours in the server-rendered markup outside the player.
+    const canvas = () => document.querySelector('.bpx-player-video-wrap canvas[data-vatrix-restored]');
+    await until(canvas, 'the restoring canvas to mount inside the player');
+    await until(() => canvas().style.visibility === 'visible', 'the intro to be read and restoration to draw', 15000);
+    assert(!document.getElementById('vatrix-userscript-ui'), 'the button must not be in the page before hydration');
+    assert(main.parentElement.innerHTML === toolbarBefore, 'the server-rendered toolbar must be untouched');
+    pass(`hydration 之前：还原画面已在播放器里工作（片头已读，${video.currentTime.toFixed(2)}s），工具栏原样未动`);
+
+    // Hydration starts: Vue removes the marker.
+    app.removeAttribute('data-server-rendered');
+    const ui = () => document.getElementById('vatrix-userscript-ui');
+    await until(() => ui()?.isConnected, 'the button to join the toolbar after hydration', 3000);
+    assert(main.nextElementSibling === ui(), 'the button sits right after the share group');
+    assert(ui().dataset.enabled === 'true', 'the button shows restoration already enabled');
+    pass('标记消失后按钮立即出现在分享右侧，并显示还原已启用');
+
+    summary.dataset.result = 'pass';
+    summary.textContent = `pass: ${steps.children.length} 项检查通过`;
+  } catch (error) {
+    summary.dataset.result = 'fail';
+    summary.textContent = `FAIL: ${error.stack ?? error}`;
+  }
+</script>

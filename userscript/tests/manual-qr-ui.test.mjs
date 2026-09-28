@@ -55,7 +55,9 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
   const video = Object.assign(new Element(), { parentElement: wrapper, closest: () => area, currentTime: 20,
     readyState: 2, videoWidth: 640, videoHeight: 360, paused: true, seeking: false, ended: false });
   const document = Object.assign(new Element(), { readyState: 'complete', hidden: false, documentElement: new Element(),
-    createElement: () => new Element(), querySelectorAll: () => [video], querySelector: () => toolbar });
+    createElement: () => new Element(), querySelectorAll: () => [video],
+    // No server-rendered marker: this page counts as hydrated.
+    querySelector: (selector) => (selector === '[data-server-rendered]' ? null : toolbar) });
   const location = { href: 'https://www.bilibili.com/video/BVfixture/', search: '' };
   const saved = new Map();
   if (audioFailure || audioFactory || realtimeFactory) {
