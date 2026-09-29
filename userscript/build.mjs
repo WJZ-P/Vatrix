@@ -12,7 +12,7 @@ const icon32 = await readFile(new URL('../app/src-tauri/icons/32x32.png', root))
 const icon64 = await readFile(new URL('../app/src-tauri/icons/64x64.png', root));
 const iconUrl = `data:image/png;base64,${icon64.toString('base64')}`;
 const metadata = `// ==UserScript==
-// @name         Vatrix Bilibili Restorer
+// @name         Vatrix
 // @namespace    vatrix.local
 // @version      ${version}
 // @description  使用与桌面端一致的 seed、tile、margin 在播放器上叠加还原画面
