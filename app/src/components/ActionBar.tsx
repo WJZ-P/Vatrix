@@ -14,45 +14,74 @@ export interface JobState {
 }
 
 const Bar = styled.footer`
+  position: relative;
   display: flex;
   align-items: center;
   gap: 20px;
   flex: none;
   min-height: 68px;
   padding: 12px 16px;
-  border-top: 1px solid var(--border);
   background: var(--bg-chrome);
   backdrop-filter: blur(10px);
-`;
 
-const Output = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: clamp(170px, 22vw, 260px);
-  min-width: 0;
-  flex: none;
-
-  .label {
-    font-size: 11px;
-    color: var(--text-3);
+  /* A lit seam along the top edge. */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
   }
 
-  .line {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: var(--accent-line);
+  }
+`;
+
+/** One line: the label, the folder in a box that grows with it up to a limit, and its buttons. */
+const Output = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  padding-right: 20px;
+  border-right: 1px solid var(--border);
+
+  .label {
+    flex: none;
+    font-size: 14px;
+    color: var(--text-2);
   }
 
   .path {
-    flex: 1;
-    min-width: 0;
+    flex: 0 1 auto;
+    min-width: 160px;
+    max-width: 260px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-s);
+    background: var(--well);
+    box-shadow: var(--well-shadow);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 28px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 13px;
-    color: var(--text-2);
+  }
+
+  .path[data-default="true"] {
+    color: var(--text-3);
   }
 `;
 
@@ -79,6 +108,10 @@ const Status = styled.div`
     white-space: nowrap;
   }
 
+  button {
+    flex: none;
+  }
+
   .percent {
     margin-left: auto;
     font-variant-numeric: tabular-nums;
@@ -102,6 +135,9 @@ const Status = styled.div`
   }
 
   .hint {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 13px;
     color: var(--text-3);
   }
@@ -144,7 +180,7 @@ export function ActionBar({ outputDir, onOutputDir, canRun, job, onRun }: Props)
           </span>
           <span className="percent">{Math.round(ratio * 100)}%</span>
         </div>
-        <ProgressBar ratio={ratio} />
+        <ProgressBar ratio={ratio} tone={job.mode === "restore" ? "violet" : "accent"} />
       </>
     );
   } else if (job.error) {
@@ -174,24 +210,22 @@ export function ActionBar({ outputDir, onOutputDir, canRun, job, onRun }: Props)
   return (
     <Bar>
       <Output>
-        <span className="label">输出到</span>
-        <div className="line">
-          <span className="path" title={outputDir || undefined}>
-            {outputDir || "与视频相同的文件夹"}
-          </span>
-          <Button variant="ghost" size="small" onClick={pickDir} disabled={busy}>
-            更改
+        <span className="label">输出到：</span>
+        <span className="path" data-default={!outputDir} title={outputDir || undefined}>
+          {outputDir || "与视频相同的文件夹"}
+        </span>
+        <Button size="small" onClick={pickDir} disabled={busy}>
+          更改
+        </Button>
+        {outputDir && (
+          <Button variant="ghost" size="small" aria-label="恢复为视频所在文件夹" title="恢复为视频所在文件夹" onClick={() => onOutputDir("")} disabled={busy}>
+            ×
           </Button>
-          {outputDir && (
-            <Button variant="ghost" size="small" aria-label="恢复为视频所在文件夹" onClick={() => onOutputDir("")} disabled={busy}>
-              ×
-            </Button>
-          )}
-        </div>
+        )}
       </Output>
       <Status aria-live="polite">{status}</Status>
       <Actions>
-        <Button size="large" disabled={!canRun || busy} onClick={() => onRun("restore")}>
+        <Button variant="violet" size="large" disabled={!canRun || busy} onClick={() => onRun("restore")}>
           解密还原
         </Button>
         <Button variant="primary" size="large" disabled={!canRun || busy} onClick={() => onRun("scramble")}>

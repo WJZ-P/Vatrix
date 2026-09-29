@@ -38,14 +38,15 @@ const Summary = styled.div`
   flex-wrap: wrap;
   gap: 4px 10px;
   padding: 10px 12px;
-  border-left: 2px solid var(--accent);
-  background: rgba(24, 34, 58, 0.7);
+  border-left: 2px solid;
+  border-image: var(--accent-grad) 1;
+  background: linear-gradient(90deg, var(--accent-soft), rgba(99, 102, 241, 0.05) 70%, transparent);
   animation: vx-fade 240ms var(--ease);
 
   b {
     font-size: 20px;
     font-weight: 600;
-    color: var(--text);
+    color: #bae6fd;
     font-variant-numeric: tabular-nums;
   }
 
@@ -141,21 +142,20 @@ export function PlanPanel({ settings, onChange, hasFile }: Props) {
         />
         <Switch
           title="片头二维码"
-          description="开头 1 秒写入参数，观众端自动识别；解密时自动跳过"
+          description="在片头第一秒显示含编码参数的二维码，供解码方读取"
           checked={settings.intro}
           onChange={(intro) => set({ intro })}
         />
         <Switch
-          nested
           title="把 seed 也写进二维码"
-          description="任何装了脚本的人都能直接观看"
+          description={settings.intro ? "任何装了脚本的人都能直接观看" : "需要先打开片头二维码"}
           checked={settings.seedInIntro}
           disabled={!settings.intro}
           onChange={(seedInIntro) => set({ seedInIntro })}
         />
         <Switch
           title="音频频谱翻转"
-          description="164 Hz–10 kHz 上下颠倒，听不出音色和性别；观众端实时还原"
+          description="164 Hz–10 kHz 上下颠倒；观众端实时还原"
           checked={settings.audio}
           onChange={(audio) => set({ audio })}
         />

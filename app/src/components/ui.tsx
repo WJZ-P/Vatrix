@@ -9,7 +9,8 @@ export const Card = styled.section`
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-l);
-  background: var(--surface);
+  background: var(--surface-panel);
+  box-shadow: var(--highlight), var(--shadow-panel);
   animation: vx-rise 420ms var(--ease) both;
 `;
 
@@ -23,20 +24,31 @@ const Heading = styled.header`
   h2 {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
     margin: 0;
     font-size: 13px;
     font-weight: 600;
-    letter-spacing: 0.06em;
-    color: var(--text-2);
+    letter-spacing: 0.08em;
+    color: var(--text);
   }
 
-  /* A small tile before each title. */
+  /* A small lit tile before each title, a fading rule after it. */
   h2::before {
     content: "";
-    width: 6px;
-    height: 6px;
+    flex: none;
+    width: 8px;
+    height: 8px;
     background: var(--accent-grad);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+  }
+
+  h2::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border-strong), transparent);
   }
 `;
 
@@ -62,18 +74,19 @@ export const Input = styled.input`
   padding: 0 10px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-s);
-  background: var(--bg);
+  background: var(--well);
+  box-shadow: var(--well-shadow);
   color: var(--text);
   font-size: 14px;
   transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease);
 
   &:hover {
-    border-color: #3d4f78;
+    border-color: var(--border-hover);
   }
 
   &:focus-visible {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
+    box-shadow: var(--well-shadow), 0 0 0 3px var(--accent-soft);
   }
 `;
 
@@ -97,17 +110,18 @@ const StepperBox = styled.div`
   height: 34px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-s);
-  background: var(--bg);
+  background: var(--well);
+  box-shadow: var(--well-shadow);
   overflow: hidden;
   transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease);
 
   &:hover {
-    border-color: #3d4f78;
+    border-color: var(--border-hover);
   }
 
   &:focus-within {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
+    box-shadow: var(--well-shadow), 0 0 0 3px var(--accent-soft);
   }
 
   input {
@@ -133,16 +147,18 @@ const StepperBox = styled.div`
   button {
     width: 32px;
     border: 0;
-    background: var(--surface-2);
+    background-color: var(--raised);
+    background-image: var(--sheen);
+    box-shadow: var(--highlight);
     color: var(--text-2);
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
-    transition: background 140ms var(--ease), color 140ms var(--ease);
+    transition: background-color 200ms var(--ease), color 200ms var(--ease);
   }
 
   button:hover:not(:disabled) {
-    background: var(--surface-3);
+    background-color: var(--raised-hover);
     color: var(--accent);
   }
 
@@ -192,20 +208,21 @@ export function Stepper({
 
 const SwitchLabel = styled.label`
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px 0;
+  align-items: center;
+  gap: 14px;
+  margin: 0 -8px;
+  padding: 11px 8px;
   border-top: 1px solid var(--border);
   cursor: pointer;
+  transition: background 200ms var(--ease);
+
+  &:hover:not([data-disabled="true"]) {
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent 80%);
+  }
 
   &[data-disabled="true"] {
     opacity: 0.45;
     cursor: default;
-  }
-
-  &[data-nested="true"] {
-    padding-left: 14px;
-    border-top-style: dashed;
   }
 
   .text {
@@ -231,53 +248,95 @@ const SwitchLabel = styled.label`
     color: var(--text-3);
   }
 
-  /* A square track with a square thumb: a pixel sliding between two cells. */
+  /* A square well with a tile inside. */
   input {
     appearance: none;
     position: relative;
     flex: none;
-    width: 38px;
-    height: 20px;
-    margin: 1px 0 0;
+    width: 46px;
+    height: 24px;
+    margin: 0;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-s);
-    background: var(--bg);
+    background: var(--well);
+    box-shadow: var(--well-shadow);
     cursor: inherit;
-    transition: background 200ms var(--ease), border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+    transition: border-color 240ms var(--ease), box-shadow 420ms var(--ease);
   }
 
+  /*
+   * The lit fill is its own layer: switching on reveals it from the left,
+   * switching off draws it back behind the tile. A background change cannot
+   * be animated; a clip can.
+   */
+  input::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: var(--accent-grad);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 420ms var(--ease);
+  }
+
+  /*
+   * The tile tumbles over: half a turn on the way across, back again on the
+   * way home. translate, rotate and scale are separate properties so the
+   * press, the hover nudge and the roll each keep their own timing. The sheen
+   * is symmetric, so it looks the same after the half turn, and the colour
+   * underneath fades between grey and white.
+   */
   input::before {
     content: "";
     position: absolute;
+    z-index: 1;
     top: 3px;
     left: 3px;
-    width: 12px;
-    height: 12px;
-    background: var(--text-3);
-    transition: transform 260ms var(--spring), background 200ms var(--ease), width 260ms var(--spring);
+    width: 16px;
+    height: 16px;
+    background-color: #75829e;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.14));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+    transition:
+      translate 480ms var(--spring),
+      rotate 480ms var(--spring),
+      scale 160ms var(--ease),
+      background-color 360ms var(--ease),
+      box-shadow 360ms var(--ease);
   }
 
   &:hover:not([data-disabled="true"]) input {
-    border-color: #3d4f78;
+    border-color: var(--border-hover);
+  }
+
+  /* Leans toward the other side, as if about to go. */
+  &:hover:not([data-disabled="true"]) input::before {
+    translate: 2px 0;
   }
 
   &:active:not([data-disabled="true"]) input::before {
-    width: 16px;
+    scale: 0.8;
   }
 
   input:checked {
-    border-color: transparent;
-    background: var(--accent-grad);
     box-shadow: var(--accent-glow);
   }
 
-  input:checked::before {
-    transform: translateX(18px);
-    background: #fff;
+  input:checked::after {
+    clip-path: inset(0 0 0 0);
   }
 
-  &:active:not([data-disabled="true"]) input:checked::before {
-    transform: translateX(14px);
+  /* Upside down after the half turn, so its shadow is set upward to fall downward. */
+  input:checked::before {
+    translate: 22px 0;
+    rotate: 180deg;
+    background-color: #f2f7ff;
+    box-shadow: 0 -2px 6px rgba(8, 30, 80, 0.5);
+  }
+
+  &:hover:not([data-disabled="true"]) input:checked::before {
+    translate: 20px 0;
   }
 `;
 
@@ -288,17 +347,15 @@ export function Switch({
   checked,
   onChange,
   disabled = false,
-  nested = false,
 }: {
   title: ReactNode;
   description?: ReactNode;
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
-  nested?: boolean;
 }) {
   return (
-    <SwitchLabel data-disabled={disabled} data-nested={nested}>
+    <SwitchLabel data-disabled={disabled}>
       <span className="text">
         <span className="title">{title}</span>
         {description && <span className="description">{description}</span>}
@@ -314,6 +371,12 @@ export function Switch({
   );
 }
 
+/*
+ * Every variant keeps its gradient layer fixed and changes only properties
+ * that animate (background-color, border, shadow, filter) on hover, so
+ * nothing snaps. Variant rules sit on [data-variant] so a generic :hover
+ * never outranks them.
+ */
 const ButtonBase = styled.button`
   position: relative;
   display: inline-flex;
@@ -324,27 +387,29 @@ const ButtonBase = styled.button`
   padding: 0 14px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  background: var(--surface-2);
+  background-color: var(--raised);
+  background-image: var(--sheen);
+  box-shadow: var(--highlight), 0 8px 24px -10px transparent;
   color: var(--text);
   font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
   transition:
-    transform 160ms var(--ease),
-    box-shadow 200ms var(--ease),
-    background 160ms var(--ease),
-    border-color 160ms var(--ease),
-    color 160ms var(--ease);
+    transform 220ms var(--ease),
+    box-shadow 280ms var(--ease),
+    background-color 220ms var(--ease),
+    border-color 220ms var(--ease),
+    color 220ms var(--ease),
+    filter 220ms var(--ease);
 
   &:hover:not(:disabled) {
-    border-color: #3d4f78;
-    background: var(--surface-3);
     transform: translateY(-1px);
   }
 
   &:active:not(:disabled) {
     transform: translateY(0) scale(0.97);
+    transition-duration: 90ms;
   }
 
   &:disabled {
@@ -352,15 +417,22 @@ const ButtonBase = styled.button`
     cursor: default;
   }
 
+  &[data-variant="secondary"]:hover:not(:disabled) {
+    border-color: var(--border-hover);
+    background-color: var(--raised-hover);
+  }
+
   &[data-variant="primary"] {
     border-color: transparent;
-    background: var(--accent-grad);
+    background-image: var(--accent-grad);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 24px -10px rgba(56, 189, 248, 0);
     color: #fff;
     font-weight: 600;
   }
 
   &[data-variant="primary"]:hover:not(:disabled) {
-    box-shadow: var(--accent-glow);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 24px -10px rgba(56, 189, 248, 0.75);
+    filter: brightness(1.1) saturate(1.1);
   }
 
   /* A light sweep across the primary button on hover. */
@@ -369,23 +441,40 @@ const ButtonBase = styled.button`
     position: absolute;
     inset: 0;
     width: 40%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     transform: translateX(-120%) skewX(-20deg);
     pointer-events: none;
   }
 
   &[data-variant="primary"]:hover:not(:disabled)::after {
-    animation: vx-sheen 700ms var(--ease);
+    animation: vx-sheen 900ms var(--ease);
+  }
+
+  /* The other half of a pair of actions, in the second colour. */
+  &[data-variant="violet"] {
+    border-color: rgba(139, 92, 246, 0.45);
+    background-color: rgba(139, 92, 246, 0.16);
+    box-shadow: inset 0 1px 0 rgba(221, 214, 254, 0.12), 0 8px 24px -10px rgba(139, 92, 246, 0);
+    color: #ddd6fe;
+    font-weight: 600;
+  }
+
+  &[data-variant="violet"]:hover:not(:disabled) {
+    border-color: rgba(167, 139, 250, 0.85);
+    background-color: rgba(139, 92, 246, 0.3);
+    box-shadow: inset 0 1px 0 rgba(221, 214, 254, 0.12), 0 8px 24px -10px rgba(139, 92, 246, 0.8);
   }
 
   &[data-variant="ghost"] {
     border-color: transparent;
-    background: transparent;
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
     color: var(--text-2);
   }
 
   &[data-variant="ghost"]:hover:not(:disabled) {
-    background: var(--surface-2);
+    background-color: var(--accent-soft);
     color: var(--accent);
   }
 
@@ -407,7 +496,7 @@ export function Button({
   size = "medium",
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "violet" | "ghost";
   size?: "small" | "medium" | "large";
 }) {
   return <ButtonBase type="button" data-variant={variant} data-size={size} {...rest} />;
@@ -422,7 +511,7 @@ export const Badge = styled.span`
   padding: 0 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-s);
-  background: rgba(24, 34, 58, 0.7);
+  background: rgba(22, 32, 58, 0.75);
   color: var(--text-2);
   font-size: 12px;
   white-space: nowrap;
@@ -437,6 +526,12 @@ export const Badge = styled.span`
     border-color: rgba(52, 211, 153, 0.35);
     background: var(--success-soft);
     color: var(--success);
+  }
+
+  &[data-tone="violet"] {
+    border-color: rgba(139, 92, 246, 0.4);
+    background: var(--violet-soft);
+    color: var(--violet);
   }
 `;
 
@@ -457,7 +552,8 @@ export const Note = styled.p`
 
 const Track = styled.div`
   height: 6px;
-  background: var(--surface-3);
+  background: var(--well);
+  box-shadow: var(--well-shadow);
   overflow: hidden;
 
   div {
@@ -469,12 +565,18 @@ const Track = styled.div`
     animation: vx-stripes 700ms linear infinite;
     transition: width 200ms var(--ease);
   }
+
+  &[data-tone="violet"] div {
+    background-image:
+      repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.18) 0 6px, transparent 6px 12px),
+      linear-gradient(135deg, var(--violet) 0%, var(--accent-3) 100%);
+  }
 `;
 
 /** Moving stripes while work is in progress. */
-export function ProgressBar({ ratio }: { ratio: number }) {
+export function ProgressBar({ ratio, tone = "accent" }: { ratio: number; tone?: "accent" | "violet" }) {
   return (
-    <Track role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(ratio * 100)}>
+    <Track role="progressbar" data-tone={tone} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(ratio * 100)}>
       <div style={{ width: `${Math.round(ratio * 100)}%` }} />
     </Track>
   );

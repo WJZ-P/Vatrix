@@ -1,8 +1,11 @@
 /*
  * Vatrix design tokens. Colours come from the app icon: a deep navy ground
- * with the cyan-to-blue band of the "V" as the accent. Corners stay almost
- * square, like the tiles the app moves around. Components use these variables
- * only, so the whole look changes here.
+ * with the "V"'s band, cyan through blue to indigo, as the accent and violet
+ * as a second voice. Three depths: the page, panels raised off it (lighter,
+ * lit along the top edge, casting a shadow) and wells sunk into panels
+ * (darker, shaded inside). Corners stay almost square, like the tiles the app
+ * moves around. Components use these variables only, so the whole look
+ * changes here.
  */
 :root {
   color-scheme: dark;
@@ -10,25 +13,47 @@
   --font: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
   --mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
 
-  /* Surfaces, darkest to lightest; the translucent ones let the pixel field show through. */
-  --bg: #070b16;
-  --bg-chrome: rgba(9, 14, 27, 0.86);
-  --surface: rgba(17, 25, 44, 0.84);
-  --surface-solid: #111a2c;
-  --surface-2: #18223a;
-  --surface-3: #22304f;
-  --border: rgba(56, 80, 130, 0.35);
-  --border-strong: #2c3b5e;
+  /* The page, and the chrome above and below it; translucent so the pixel field shows through. */
+  --bg: #05080f;
+  --bg-chrome: rgba(8, 12, 24, 0.8);
 
-  --text: #e7edf8;
-  --text-2: #a3aec6;
-  --text-3: #6d7a96;
+  /* Panels: a top-lit gradient over the page. */
+  --surface: rgba(14, 21, 39, 0.82);
+  --surface-hi: rgba(22, 33, 60, 0.86);
+  --surface-panel: linear-gradient(180deg, var(--surface-hi), var(--surface) 140px);
+  --surface-2: #16203a;
+  --surface-3: #1f2c4c;
+  /* Buttons: a flat colour that can be animated under a fixed sheen that cannot. */
+  --raised: #1b2743;
+  --raised-hover: #26375c;
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.12));
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-panel: 0 18px 40px -24px rgba(0, 0, 0, 0.9), 0 2px 6px -2px rgba(0, 0, 0, 0.5);
+
+  /* Wells: inputs, the picture area. */
+  --well: #070b16;
+  --well-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55);
+
+  --border: rgba(74, 100, 158, 0.26);
+  --border-strong: #26355a;
+  --border-hover: #3a4f80;
+
+  --text: #eaf0fb;
+  --text-2: #a6b2cc;
+  --text-3: #6a7793;
 
   --accent: #38bdf8;
   --accent-2: #3b82f6;
-  --accent-grad: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
-  --accent-soft: rgba(56, 189, 248, 0.14);
+  --accent-3: #6366f1;
+  --accent-grad: linear-gradient(135deg, #22d3ee 0%, #3b82f6 58%, #6366f1 100%);
+  --accent-line: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.45) 30%, rgba(99, 102, 241, 0.45) 70%, transparent);
+  --accent-soft: rgba(56, 189, 248, 0.13);
   --accent-glow: 0 8px 24px -10px rgba(56, 189, 248, 0.75);
+
+  --violet: #a78bfa;
+  --violet-strong: #8b5cf6;
+  --violet-soft: rgba(139, 92, 246, 0.14);
+  --violet-glow: 0 8px 24px -10px rgba(139, 92, 246, 0.8);
 
   --success: #34d399;
   --success-soft: rgba(52, 211, 153, 0.12);
@@ -130,7 +155,7 @@ input {
 
 @keyframes vx-grid-drift {
   to {
-    background-position: center, 28px 28px, 28px 28px;
+    transform: translate(28px, 28px);
   }
 }
 
@@ -149,9 +174,9 @@ input {
   }
 }
 
-@keyframes vx-pulse {
+@keyframes vx-blink {
   50% {
-    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+    opacity: 0.35;
   }
 }
 

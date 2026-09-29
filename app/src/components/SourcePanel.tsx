@@ -21,24 +21,47 @@ const Drop = styled.div`
   padding: 32px;
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-l);
-  background-color: var(--surface);
-  background-image:
+  background:
     radial-gradient(circle at 50% 45%, rgba(56, 189, 248, 0.1), transparent 60%),
-    linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
-  background-size: auto, 28px 28px, 28px 28px;
-  background-position: center, 0 0, 0 0;
+    radial-gradient(circle at 90% 105%, rgba(139, 92, 246, 0.1), transparent 50%),
+    var(--surface-panel);
+  box-shadow: var(--highlight), var(--shadow-panel);
+  overflow: hidden;
   text-align: center;
-  animation: vx-rise 420ms var(--ease) both, vx-grid-drift 6s linear infinite;
-  transition: border-color 200ms var(--ease), background-color 200ms var(--ease), transform 200ms var(--ease);
+  animation: vx-rise 420ms var(--ease) both;
+  transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease), transform 200ms var(--ease);
+
+  /*
+   * The grid, one cell larger than the box on the top and left, slides one
+   * cell toward the bottom right and starts over. A transform runs on the
+   * compositor at sub-pixel positions; background-position would step a
+   * whole pixel at a time, which at this speed looks like a few frames a second.
+   */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -28px 0 0 -28px;
+    background-image:
+      linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+    will-change: transform;
+    animation: vx-grid-drift 6s linear infinite;
+  }
+
+  /* The content sits above the grid. */
+  & > * {
+    position: relative;
+  }
 
   &:hover {
-    border-color: #3d4f78;
+    border-color: var(--border-hover);
   }
 
   &[data-active="true"] {
     border-color: var(--accent);
-    background-color: rgba(19, 32, 56, 0.9);
+    box-shadow: inset 0 0 80px rgba(56, 189, 248, 0.14), var(--shadow-panel);
     transform: scale(0.99);
   }
 
@@ -124,7 +147,8 @@ const Slot = styled.figure`
   min-height: 0;
   margin: 0;
   border: 1px solid var(--border);
-  background: #03060c;
+  background: var(--well);
+  box-shadow: var(--well-shadow);
   animation: vx-fade 260ms var(--ease);
 
   img,
@@ -142,10 +166,15 @@ const Slot = styled.figure`
     left: 8px;
     padding: 2px 8px;
     border-left: 2px solid var(--accent);
-    background: rgba(7, 11, 22, 0.8);
+    background: rgba(5, 8, 15, 0.82);
     color: var(--text-2);
     font-size: 12px;
     z-index: 1;
+  }
+
+  /* The second picture is the result: the second colour. */
+  & + & figcaption {
+    border-left-color: var(--violet);
   }
 
   .placeholder {
@@ -163,6 +192,7 @@ const Slot = styled.figure`
     color: var(--accent);
     font-size: 10px;
     letter-spacing: 0.1em;
+    animation: vx-blink 1.4s ease-in-out infinite;
   }
 `;
 
@@ -182,7 +212,9 @@ const Timeline = styled.div`
 
   input::-webkit-slider-runnable-track {
     height: 4px;
-    background: linear-gradient(90deg, var(--accent) var(--progress), var(--surface-3) var(--progress));
+    background:
+      linear-gradient(90deg, #22d3ee, #3b82f6) 0 0 / var(--progress) 100% no-repeat,
+      var(--surface-3);
   }
 
   input::-webkit-slider-thumb {
@@ -221,7 +253,7 @@ const Overlay = styled.div`
   display: grid;
   place-items: center;
   border: 1px dashed var(--accent);
-  background: rgba(7, 11, 22, 0.85);
+  background: rgba(5, 8, 15, 0.86);
   color: var(--accent);
   font-size: 16px;
   font-weight: 600;

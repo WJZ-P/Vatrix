@@ -3,13 +3,35 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { styled } from "@linaria/react";
 
 const Bar = styled.header`
+  position: relative;
   display: flex;
   align-items: stretch;
   height: var(--titlebar);
   flex: none;
-  border-bottom: 1px solid var(--border);
   background: var(--bg-chrome);
   backdrop-filter: blur(10px);
+
+  /* A lit seam along the bottom edge. */
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    height: 1px;
+    pointer-events: none;
+  }
+
+  &::before {
+    left: 0;
+    right: 0;
+    background: var(--border);
+  }
+
+  &::after {
+    left: 0;
+    width: 45%;
+    background: linear-gradient(90deg, rgba(34, 211, 238, 0.5), rgba(99, 102, 241, 0.35) 60%, transparent);
+  }
 `;
 
 /** Everything left of the window buttons drags the window; double-click maximizes. */
@@ -29,8 +51,12 @@ const Brand = styled.div`
 
   strong {
     font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: linear-gradient(90deg, #e0f7ff, #7dd3fc 55%, #a5b4fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     pointer-events: none;
   }
 
