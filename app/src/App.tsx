@@ -40,8 +40,8 @@ const SettingsColumn = styled.div`
 
 /** Seconds of the QR intro the desktop prepends (intro::INTRO_SECONDS). */
 const INTRO_SECONDS = 1;
-// v2: every switch now defaults to on; values saved under the old key would hide that.
-const SETTINGS_KEY = "vatrix.settings.v2";
+// v3: tile now defaults to 32; values saved under an older key would hide that.
+const SETTINGS_KEY = "vatrix.settings.v3";
 const DEFAULT_SETTINGS: PlanSettings & { outputDir: string } = defaultSettings;
 
 function loadSettings(): typeof DEFAULT_SETTINGS {

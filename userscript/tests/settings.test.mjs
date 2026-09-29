@@ -12,7 +12,7 @@ const defaults = userscriptDefaults(JSON.parse(await readFile(new URL('../../app
 
 test('defaults come from the same JSON as the Tauri app', async () => {
   const params = validateSettings({}, defaults);
-  assert.deepEqual(params, { width: 720, height: 1280, tile: 40, margin: 0, seed: '20040821', invert: true, autoIntro: true, audioMs: 0, audioMirror: true });
+  assert.deepEqual(params, { width: 720, height: 1280, tile: 32, margin: 0, seed: '20040821', invert: true, autoIntro: true, audioMs: 0, audioMirror: true });
   const app = await readFile(new URL('../../app/src/App.tsx', import.meta.url), 'utf8');
   assert.match(app, /import defaultSettings from "\.\/default-settings\.json"/);
 });

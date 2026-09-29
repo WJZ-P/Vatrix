@@ -1,7 +1,7 @@
 {
   "width": 720,
   "height": 1280,
-  "tile": 40,
+  "tile": 32,
   "margin": 0,
   "seed": "20040821",
   "invert": true,
