@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Vatrix
 // @namespace    vatrix.local
-// @version      0.3.7
+// @version      0.3.8
 // @description  使用与桌面端一致的 seed、tile、margin 在播放器上叠加还原画面
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAJnklEQVR42rVXW4xdVRn+1tqXc5k5Z26dC7SdttOBlo6dgQq0WBiCCRUjEkkcry9KihiMT/rqExqiwfikAUTUCEoYCIagCUpbIpZSQKqVDrdpp/fOpWemc86c276s5bfW3mdafOdMV/fea+/1r//7L9//L4nLP4GJZx180j+7hxKXN7U/MyG1udtw7893Sc//uhD+Ju24DrQQWkj+cyEdVwjH07zhSmmHcKQwYvinzRRUS57WULzq2DwrETZPhGH5meNPPfD6lXuKVAm7+eA9P/ulzHU8KLw2GGlmU2GkmqtjhmfnjAL2nZSrilg0VpKmQIrjxkKrRLRRgveqWUa0Unp8+um9D7SUcKxJpib1ui88/Jhb6PuuUlGs+Ke5SGmltbk1d3HIKd4r3qvLVxWbEfFdqFXU1CpsasR1vg84b+6D9D6gQAWvreum4tCtg0vH/vIiJkYc64K1e350h2zr2R/V61G8UnWk5xGTsggj4RKAgL+mDzJboBUyEK5vrWGRG3cQsxREqog0bkJHdTQXF6DDpkWujazEStpra4v9XM6NynN7Zl744d/dZDb77bgeID/gYc3um8XShyex4HUgrgFXeSvIrh3A/L4pytdw2roojC4AhytpcW19SHtAxAHBLyMun8H6Wzci0+ZRmRjJ1prPeXH+nTOoLNS41ruPs4kCDKBPxXGIoLIii3u/iHCxinNvLqOKq9ExfxSd945CnaxD//tDyFwxQSpigpM2gkwASR1xPkTt/AwGP78Roz+YsF42G3jpoHkwc+BhqeNOs2C72ZrvJxwqn3Pa2lE9fhIf/uKPwC27of95mJvtxrnpeVQWp9DIjCJfPwQ3qFr00iyNGWRWB01lQiiiF2IZvffchlKD4psN+C7dR4ULhTw++NPLKH00j66t6xFVL+WG7/q+Ly8nqIQs9kEfeAtbNhaw4YarsPumk9jxvbVor/8Xa4bzEAP9iC/N2s20SiLbDkX0tEBz7iyKN22E3LgOlUoTDSoaaInY91APQ0y/eBDZ3kFmmE1jjWlAtuiALoJb6MHKXANn3z2FpWtvw2xuDWo3Xofq1jEEnZsRX3cnwvI5BiXRmsGNdRxx/xBxYwVRcx7Fu8a5OVAPBJoB0AiYfhkPpw4cRvlkGZnuAeqcZv9w4iIGEAPJOtJlkPXjwkOPId4+hsryPPDBblRPc75cQ/cNu4B3X0a8UoLTkQUiIjc8RPTh/Flkr2WmDG3DykII1xcJuXgCjRA4MbkffsdawHCJCVhhWSNRQBtfmixSVCTbAVEpwd0yjuq5Dgy8+hxGdrTh9PEzEIyLiKkR1xSc9jXcXJq44sImlTqP4h1fQb3Kx6qm3+lS5r3f7mP28FEsH5tDYfMtCXqmpEbiArcVASadjBuEl2WAu6j+4yDiXd9BY3AP+h7chsr7JXhHT1DJcVx4/LcMuDLBO9YC0eIs5FXtEFtuRnU+hsv0NACNVYv8ZO6FV+Bm+yk7b8EK80K3Iu+yBnaQ3hiMVyN76m0MDRwkmUxj6g8v49ThWSycqaNSGEHQwXiozCaxEDURLZ2Cu3Mn/e4hqMZoNqlUoNHR6dP2p7D85jQy/RsoXiR8bfZJNZBXojfD/pch40VkPF2GHr8bPZ1dGLvtauQxi2J0FPltnXRDicrVoMoXCZPLRsbRWNQIQgnDr73tCgXOn/7zKxTZYfnDKJDso1dxu1eiN3axcUATOd3rsPDoS1A3zGEmy6DKDKHubMLw3dchv2cUtfc+gntpDnF1EXJ8BwK3E9GlJrq6XPS1c73vY/lECaVXjyA3cD3FS4tZWLDG0jpVgISlS8qymzWRTF7KfBGyBIzs7Ea4bhhzzz+FrO9g5qEjqPSMEVEn3BNHofKUsv2zaPDb7naJLj5HDfJ/DzD/wj6omg852M1MEwlhmQwwQHXLBZOwk4lWsY0BO0giyHZjZv8x1K7dBn3zl7Dux3vRvud2ZN6bhZPZjKB8HmLrVgRt61EQTbQx9YKG8a6HxsU6Lu47hEzfZoveVmWlVuPMAJ72Z3XiAhYZ7ajELCJxB0syXJJG7T9Hgd/9FSsrXZh66QKq/dsRFVlZu7fBW3MYzug4fBJOjpQb1AHfJ0K6Yem11xAvRnC29CaWtYST7CF1AhLBQFIjlU40Quob89IooB1TdnuQn38XQ1+7Bj2nT+Oa5jSyl96GPnIE4savQvRdD7cWETkpl+VfRRLhisLSgQPwezaSdj1TjLm3Siwdx4mljQtWLZB2LFZTe3UsW7E3gdM1gNKb76F8O6O7awcGd12DzPkcaroCb7SXWeAjYm0Qpi4ZVIUMyu+8gejCEjLDY6lM/bHaoVs1ZJUJrUlMQTHhIWxoKNvnkRNITAhzaE4+wYj8NKaeq6A27cHPkv2yfRAXA7IrvzdMyvVsCVB57W/wCusseutWCzBBLlg7TIOiSePbVokoTrMgjtIRJlfOmSZEFNbCuzCD/Je3IKJgMTcPZ20RIYtOxKIT1kk8dSPWR+39KURnzzJ+BmFjzbozNbspXLGRSdlUaCpRYNL2d0n0R6ki6TCLTcEhiUSLEsvP/gvN+T74g5ugh0dIRhFiEk/USFKPRRG1t1+Bl2fFc/OWU1rAjBzVAmizLWox4UTS0xgf2ZHUdjPMx7abpYVk93o4TKuuYgm5O7tZ47VtZ+h+bs5qqDNonCc9n30fsnNDipoyonDVsmgpYDRVqqXAZCwMoesWGankpW0wr1iQ64JTCZFbfAn+zk7IAqMknyiu4gxTUCE+9AS73v4EvVEgRa0+5tYwUUzFdXbjQcoD0TE46noLFZE0vGEj11zjJChjppfTO4Tyrw7CLwfI3Hc/4jORbTZ0rQnv9Z8go9ls9o2mJk4jn5sJE4A62VyokOZkOxRHU6tZwGPLk7TCN80HtiCY3JGtg1MrMxhkrgdv0xjCp99izxDC+dyDiKYXkTn0U+RkBNm7PfE70rS2Zg9Tl5qDCs8Wygx+E4VPpufBCQeTk3Fx7P5fS79jbxw1GPee0pJF3Z6CvGSYToanI0klHJa7eOE44v4C9AobT8V3nZuSema4bdWNRoGg1UVrqam067uquvD70qFHvmX2/tjRrGP73ke1l39AS9+aXdvNqQQZ0ShhDyMyUUJ6nK+vmP6e5bstrR+ppJRohEpadWMBwykmXXSw/JulQ4/sbZ1NxRWHVLu+MHL/Z3go/QZfDZmThyETqm3bLyHZ4PFwSksI8yyNYsAqq6UPwCr5RGkM8HCq42m2bs8svfHIwf8/nF5xPJ+Qxh2f7PHculy1AP8Pxe7hZr/YjSEAAAAASUVORK5CYII=
 // @icon64       data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAeZElEQVR42tV7ebAd1Xnn73T3Xd6+6OlpxwiBEBKLFjZjjBAYG4Lt4IxlJ5Nksk15mCSVqYpdlbgmMyo8NZkkNU4qrqTiSTIkdpwEI1xsBiSzSLIxRoCEWCSwdrS9fX/33a37nPmdrbuf/Gziyj8Z2c29796+3ef7zvf9vt+3dIR/8T8psP2RYOvwYYHbb8e/5t/swFHRvmyt8u/1q/47//mPO//9/vUfGVE7v/lpiSD4F50v3veM7dtD/gfY+ZkE/z/92/5waF7fZ93iJ363dUeIfQ/E+o/l9/3holLQvkmFwWohgk4RhKGU+izFa0SAShREyEMIap//D/mqvy/wLGHuE/Bz/RN+S3sKVAD+P4j06fyc5yRK6t8ICMkLcQ9pdSH/y28D/UP+zU+Uvqx+D6Wvyy+U4um8v8KsaNZPJLXJg8d3/pcRfdrWrTuifft2UAkLW8TCCtixI8ADD+hb4pJ7/9eWoFD6AgrRPWGxrUuEJf4q5PJC3k9Y2QRFUfZy+nOhJeLnVBTvG9pXfa7+3EroPnOvgX0P5VekryNgLqoP4T5WWkZ9V5V+p5R0gvBVJlBxDUl9Zlo2699Bs/K/jz302/tTS965M3l/BWjTcWaz6mf/+M/DQuvvBMU2bnCTN+POCL07gRFSpArQmxEaRQSpQMIpIkiFtYrzyhD2HKsFwF/LL8y/VV4rKj2Ecu9TBeX/lno1odmg+iya1emvnvjn//RbGsTysi2sALfzy7Z8rjVavvrZQtuiW+JGTaoglHorhTZrvduwu5sK5nZWhKEVKbDKEOmOi8wi3CGcAjLBFxDe2pi1cPM5BdR+p3ddWLmVUO6XtAb/nZI0jDhBEgdhsRQ0ZoZfV8MT204+9/tTFyshnIfy++4w6u7Z8u9eDFt7b47rtQZXGrltFHa/rEBWCXbhtAz73n2eyiKsFShld91+Fxg3yQuvchYBNV8Z0u12ZvbSfCac+YtUSYmW22y0tkcqytxUykYjKnWslFF8z0Rp8P/iua8Q07jR2GecNshM/xHzfsU9X/qboNx1Y1yba/DPYvq9vqH2MRkbX0P6mnAxsflcJbFZlJTKLEaZReZ32C5Xf2Y+90YokFOINfTsvs4N3L30fez99PumcU0Z1+n7DQ3E5nNp1mHvzwsW42atwQ29bvXqX/6alXWDmO8CzixW3LXjDtHS9jwBPaE5hx7ghDF7ZCsTQQp+mRCB9XH9s6AAje4i1MYTWbzQu+5cwxzadfWuizC7rLExB3omxFila4G1cILKNYo2ypfOB1S2sBQw9XqlvYewVqMS+oNA1KhM3vPeo5/f5WWOzA/XH7byheEfBFywQsPuptayBx+prNBSOrO1BmQikd5XI2ARYaFImcvmsE7mXMSbZyBykGbf668CkW14iu76XkZgvR7usNnxBlF+zioKziW4zkC4qJFGnyAFZYtFRPCwoJX8AP/YBU2WdmplOeBbevcX14ei7bDeJWU0RvdPaFo8pL45MSXWCyoEFmj0RRNlYjopgUP9ImTYhqhjEcN/G42gTKUWjUVoy7Ah0YVQCyupMkWKKRbIhDZnboLgvWVzjnqoojkzjphHoaSsCzoFGN8XaQy1AM17BJHejBauuRVhVDKapRVRrMrm95744us6NEbYa3CADKNwpyi3an+KKXHUnBzDlj/4ebTeuA7V6QqKrWUc/upOjN6yDUFrD2RFoj5SxbKDT2Pj734a0xXtfwUc+6MHUX3vPIp9qzR9cebowqYzV43WIgzmRTnlrEybrFAupuvQS//WCmhMDiKK5nDzlz6DrsuWQjVj64U2/iBwYCh8aOW1WtpbMHjgOPZ8+Um0LFqiv01EsTVCs/Yx/vH61uH1IvJgEIhwE7yv879JrYrzBw9jzcc/hHp3FxrFCO1bN2Pg5DjEresRV2l6iwMMqpUYneIOfeBy1GaB0q0fxswbf42os5fXJIbS7OABydh6ZrrGhcx7kSGesoivDOg1kTRrkI0KaiNnceOXfhlLb9uIWiJRCAMjqI8nQe69sQKe08Zz3jvwGGWpGKVKfYbV+PX6nH39GxifbjfsVK9tlSMWZqPCjg6cf2IfRk5dwBxPGxuro7F2PcKjbyE+HyOZpHuMAdX2DTj16PcxOw6MvVtHdekWoKcL8fSIcR29izCoLa1rmUPZSKFyZAYqBT2D4vqI9e9raIwNomN1D/ruuBHjlSZqtRhVBqlatYk5Ruoaj6p71ZG7Ua2RLwcYOHEWR5/ch2J7h7mfoQ5asVpW/Y84kIZB7kWbhU1LXcOWNsjpBga/9SxqpQBTSQnTvV0Ql12G5OhxqJYWqCpPX3Ylxk4oTJ2YQKVSwmy1FckVtyKZHqCZ8gStgMSFSZXtsBXWhUo4guOIjFGAtOavjPkPYdl9H4YqFxA3JZq8AhGKrzDvY2HTAhm4w4HqkUd2ozGXIGpt9xHIOA3PLTsCp6IfzQ40emq0TFDoW4LxR55Dom9GIKkF7ZDnzkG88xLiDR8HxgmO0TJUzyqMPvk0krX3oTFKDXd/CC14GlF1giDUyvvEJhzSLrOQ6cNYSkWUITPCkJvEKE4SgJuTIygvbcPij30YcxVpw7JLr0jdEAYZexQuVhdK3KyRcZx46ntoWbzcgLMBYkfMhMr4T5QT3BJO5ZUQIWzrxhxd4FLecekv3I7B0wOofPBSDD/4MK7cNIC5tjZUJ+gSGzsw8O09KLUkaNQU4noE2dOJuDKBoKWXkcDyAoYIGwGUBbuU43uS4cBPH1KbPy2gPjaAlb/2EUR9HaiP1ris0CggEDnoCJwaNaGk75dKAkcffQ7VkTn0rFtELZVgo5s/KeNaEebR7hzFZfjS5KPY0YPj+99G2+d/Faq9DwGvpbZ9DM1ehf47b8aE897p1hZEhdXovGI9TRZovHU1Jv/2j4wJK4YgoWOwKlhiY4iQcJmd331PWGKT0ekjnp1A2B6g7xPbMDetcYq7F2ccTDNspS7iZlEBlbkqjn3rOZQXLaewLW73mYKrxCk7I8DpO5nGULjMTmNBhELPYky/fhwXdr+MOr+fOF4j0F2Bo3sOYjyWGJuu4RwFnvnAeozuP0DTAybP1jHXfS1E/0qC4ZANZ4mlqQYEpebzMo0OhvSYxUkDmJbw1FAfPoeurRsRrlyG2gxBOKErxvowsIJEewp/wmWgqQ9ylaAY4tSu72Hm1DBKi5ZSIW73YRltIObngAEu4t0qTVK1qRR4QZKIlm4MPfQMCLqolsqoL+vFhFiOCYJhtVym0HOodqxGrVFD5cwo0ThCo8HYfOVtdINRE8rg+TtXLY2ZO6H1+yRxO9+0rzw/qUxxh6vo/dmPUngYwePY8DEjuP5ZnFOAfk0oYIOvx//p2yh293Pt7RShZPO5IMjMJJdtBAvVSHzZwcRwxvKotx+Vg8fx3vb7Mfnf/wcaD+9GvVrE8HMHwBdURStiXjNevgHVI29wQSHkbAPFdbcALa2MFpOOyvpdtmRI5q3C8XytrET7/sgA2jZfgeIVa1GfaFDYAE1eotm0Cmg6BZhXrQT+J2wt4sLelzHx5im09K+ivCUD6CYCIHByC6Sel8cAHf1VvgJj0lhlrEBoTRY7ICoNtEUKM4//HYKpKUxxsWLvS6ivuhpyOU2+vARyeC9KV1PuchGtfQSgq29G7eAPyCv6DS8wFFXviBLwaCRSSqu3mP5fnyHfH0fPJ/4DCCFGcCuDsOBHgcMwS6AgLayTmePkN54g811ErOqwwCuCXLIV2N0PsipApgDakIrc7mSkzHJ3oijLYUgKvNFv/D7Kk0XUj59D8yyP7z6CpeeeQT1+CtMkR80KlXL2GMI116B10xZ0b9qMwTdeNmaNsGwzxTCGLRh6EuSE11aiQ9/4IMrrVqB43U2ojiVGiCQRptCrQrNbFqsouLYGHTqDrhJGD76Dsf3voH3ltdBorXOBNGMVylWuXIUlVcADqf8HadFCwREUV9TQSmjtQPLeaUzufBjq+l+iCyyDWrkSyeZWbLx7EEvv+yjO7j+E2dPncfqfHkft0DcxcfCbWh5erATZPsuEhORJJ0yJLoSGafZmUl2X10uN/jMj6LrnV2juAUNqw/mvfmGNVCmXvGift4rQVJZpCO/7bVpIqwnfOhHT1mstwNFrfR/MrzdE81zfl598hpKWvCLjT2FXP5qv7kVz9c+RnxctF1vSixOH9qP9Pp53/UZ03LQRnR19WDoj0blxMyYPvoXpA29idM/3DaBqVFZUgDIpa+ScMXGFDQo/OYxoeTfK19+G2piy1aTYLSW0AB1blzVuYCh1Swkzx85jfM+rKC9ZQ4ulpekwrqvP+hdKOatxkc5RJguCO5D70Fda3ScCToOBQdJA84CJMcgj+7ijFKKfUWLLSgxXCwyH05ggdT59PsFo0oWJE++hTkYmrrweHZ/5dRKZHpMf6GggXChUrrKkkT8xVZ0azX8Ards+xB1tZ0GzSf+nwE2b/cbukLY+QhAUxnV7u4Gpx54mbyB77eyzStaFFiFyhVtv+cIWSy52AeVPd2HCxGkZWoZkfCcyWg3blqB84CEUC6OY4SLlurWYm6ng3NunUV1/LfgWlc51XNEr6OEOzg5Vaa6tiK66BbXnHubiVxCDXGndlVtM0qTRX2dUHQEKt3wE1VEd63Wx2+60cG5syhC6yk8faCEg93TREkence6pfSgvXmV2XxdmLPcPM6bkU3FrDWIhJuiCgMrxhMwVDHpTAaq1G2JoFNd9lunvimUYePM0poqM/3/xDwhvuAG1yQJ3/hKoE4OYJFDWCqvox9yty++B+sFuyDnmB2GLwRW4gIvEZn3N0fMo37UZsnM5GoMNQ/RVzkN1AqwtoEz9kRmjpaCZaoSTX3sOtcEZdK+/xtBeW8f15EfmOLOTSeQxQLvAA7kavEpf5pWoDTukAoISdx1lHHvsJSz78udR6L4Usvc69L/0KK7+z5/AmcPHMXVhAhdOsoLzzIMIll+J2nCAauES8vQWhJUxhsseA4Ieb7Tpy+o0VKGB0u0/w7ifJYeBCxaxsiGwjwWeRZ3WKmIKWp2KcfaRXWR9ywkpbY75FVzclxYAvVsrpDiwQBRQYr52smKjlM72dL2QxKjYtxSTz74C9dp51HpXYLbSjZNDTSxqKNTXXoNwA8vJsh8rKsew+N9/HCPv/hCVoXFMryRd/uc9CBszhmTpTpqp5DJUxEx6ipvWQS65Cs3BpqkYGQVwM5s8jQwX/Z1AZ5tdatKIUWboG969F3MnBpiD3GRMXzjk94ROZLXSnBGoHwVB86nKXAbz+jHCFnCEA8NyBws7JUz9yV9h6vF9SJilzcmlGDs/AVIBDLzF5KjShbPHhpgsCdQvX4dw6y1o+fznIFb0slYwZoQ2h959dnBkcxKFbXdD60bX/ePYrkG/FiOBpT00fa0MlwMYhKeXnHv4CRY8+kkxWKsolG3aPa/UnslsGydqYQvQZbrAdlVczd7GT5Oo5Ds5wobEqGcZmm+8g6XnT2Am+VvMDE3h6IXvI7rr5xD3rEUtXAY504Yp/n52LqCPMl8IWCy54UMQD38LklxdGElis/vR2pUQq29GfSBO64Wa33exltHXZStp+vTQxH0utqOA0Vdex/ShH7JadL0hazrjVJ725pMbH91MT9UUURcAQchcicrhhkJar7Y5fGhtUld6GdMTlLDh9+5Hy4c3YeCFVzD56tsY/ce/RDwyRVy4ArNjQxhYS+C8+Q7URI+htPFVn4Ro/w6LJUx2yC41U0oqzNy23Y/aXGirQKR72uB6afK97cKkEIYIOVwIhbXpC488xqV0m2RNK8BEKt+Ky/cU3a7rKKetS6qFiFDePay9298bRwydMqWtqhhALBli89bXHseGu29DcMedrNrcifA1EplnH8Iln/wgTrzwKkZ27cHs/3kICXdc9q+GXLYZSWsXq8pTZqFyehzBKuYM67dRcdIgt051WX1DV4tOfjTgOcZH2ULdhW8rYvqdk5h6+XW0LL3aUGxTfhdhRi6dWdsSuy/1KvNdsBATNPpKW85ZG9rW62B83zcplWmesFbALHHyjSMY3LUfhY03Ye5CFXNxLzXcgVU33YB+HtxjnP/6LsztOU3s6Ebz4JOQU0M0b4oaRYj5vuVTv4hGzA50g2BId+tliOtgKG+QAEWhXbju+ep90OavG3aDjz1OF2Km2t5nGzHCm76AD+cit6nCZaGOEKkfTYcJ9Sn/h+0AGaaWXkTmCkeBRVzd/CAZGnrkadR1raASotaMmBSVcOHtd8AyAYaHwGyRyN6zHPFtPw/5qT+DvPcrDGEhkqkRBItZM9x8N3FAE+IAXWWB1oJNe1WShUPJndeHYOepcmYE4/teRKn/UsspwmIO+R2gpcVX38BVTqZYK1H9mHqA8xcpM+RMuYHKkSrb09OMrsD4WznwNsb2HsDUpECFKF5tvQajxwdYLGGlaLRJ8Osjxx9E/XQNtQFWetCPeOltaA4dQ+m2bWhG/UiqdbQWye4ovKe+nvKyU2lLaMz5WeHCyO6noEh7w85+W7pzpMeTFg/e0lNuA+y5PGeheoBRimeChoAipZLmAiYSKKsb4TowQdHl3eTtf/8V9H70LowMFSDZN5isnEG49gZUxklMaClKL3ZsgtddRq1QyLY7WW77GsSN96JG2lsqUPjQCu96plYYN2Jgcv4SWebYHCaffx6lxR/gBtjdV4EFP5NgOfwyMvrpGWMRMhXTjNf8CAZ48DPsKTeR4dtWabtZpYUIzQ5FgcXQ9kUsYgzjil+/Cyu4W+PvDmDwwcPo+/rfYJLFiclqHxqnjtou85J7Iaoa7S9H6d4voNnyAYTTMQsoTH0b2RSNI4BI3GSNyevY1Rrf9Szi4QmU15JtRa6+gNAJb3sNdlzG7rxQcp5sLtotUBXOjZzokrW6KB1IwcQkmL4rHNiSGdPf2aOncezrz6D3t38V8irW4z44jdVbSijfeiMG3z2J4e82cOEfX0BSZLVHMz3ZjuiX7kZ9PEApYOO1KWxfMBQpFVc+72e9LSA3aDLFHt+t632kvQyhPqlSPpf1ZAd+cEJlYOiVI7BwTVCp/G0xLxogVxzJLCF3CdbdSn0r2BzZg+lj05g5w4yQVPjkwZNgwRjV3ssQ3vEpBOs3khP8IuSGW9GytRuSJWxSyLQ2al4prD6UPjToGa6UGBo4+eqLaLAKVVi0ksKXDfHxhU41n+FmnMY1Y6WbN3CAmJ90SH9hyXeuTGUnLqS7TgaOubzJuUtIQFqEeHACo8/sIegxhLVdgtGzcxgnCI6dmQPJnsnfEwogWKoqXncjd58YohXaFLYartPfOKuQI7FlL7Mkfj71PGlv22JiQadJeGzO71qiqZmrecAHdVF2ZzpPqRwqyHi/zZystty8jR9NcVmV1U3GGM2oi3GHyLpC1xLUnnkSM3sPIWaLbPZcAeNnpzCNVsyS98jW5VBnj6B1CQsgukxWYUiSIp240QLD/a2R35QkdMm3WMLcO2+ifuww23WXmnqfvqfMxXyZDUg5V1BODusSdud9EUYtBIKwbWFp+07Wz1VKIoSfS/Tahh1KULpSawqdZIZEennqEJacZ0t6/RaMNY9i/BvTDHmbmc5exvNXQIy/gOKamzE3GZmFacF9jU+47rnOO1SubqOXO/XCo5wPYBLmaC/coJUWXMADtcxabC4EwgmtBy5cBXWeq8ynwg4lTcz1Oy0yZmyHuAJkcy36eq70pBuqmhi19qLJjLDrNz+Bxmc+isbB80gOnkBw8gXErNu1dI2TCrNvONAw0yXatBPP4Sh4ojUQWbzRawhYVqu/x/LaO6+x4nOVScQs8YkcL1G5sRoXARwPMIMYHsOSxIGhIUML9QYT4ZmOcrwffsIrsJVbJfKwmQPENFUuo7B4Baa+8woae99Ac811iMuXQV7Bo1Vj5REUt7CIMemczvl72ie0c1bp3KOuF2gnnX3xCehGdtjWZ5MeHfaUL9qqnP/L3JyBL/G7XEAgU0guTw7mM2FfOUlMi1pAZsCSB0IXHXLppV2UzsYIUEHUjvpD32Y6TEp7htneGc75nD6HUhfnBS7hfEE1Nko14748fKtLeiDUGKCjgSihMTyO+uEX6furiXvUYtrry89WZCavnN+nQChzWa77PA/m+f2UVpEOMWWO+Fg+mpvwkKnWRTpUI9wMAAunfZdAvvgakjfOMhHgjk1VITji0n79YvbuqKTIma30HXFlhE9iP35IpbDbqbO/6qHdEPUau8RLUvBTHod87PTgpny7LU6/N9xfur5kNl+sFlCAs2U3pICckP4QPrX0hMNp1460+aFIlsrbehDWmdY++x2T5ODUSSza2skK8ioKxoJH2Q2Y6/8lFv3tWIDu9ChDfBKafDLLsvhbz7LuuMoMWphqr6frueZqfsfTMGgSOZnVN3I9SJErkuaZYCDSHZWuqJjYCwa+ri5db19mxRbj/qGJGLaXEJnSdNC9EsUjP8CKX/g01EcuRW1VJ2pDbGAyP44rtmdpZpakxwF7V5v0NFDgCE7z3RcQsIgarrqcHxdczIcLbXlu4kblzPqQbRxUzhJ0JLNT8zkLEGlNkCfUfQUl69m71hjy87rZzkPm6gf+vSndRCYkqrEK5OvsIWxmNYi/C0tcRIswBwpO/aHDLWf6kkVAWaTwE4wWr32DCdOltjmrkx4zlu9TdWX7mWm4S3Jx3lpqOjyddqWlI7ay6qbDRTonyAucsyTCxTfXUMwU4Urjua5KOqiTdp3thKYyo7ItKCxbg6GvPIUeMr2O//o5TFG4oKqTGgZApspJwXU7PDATBGRBY8YIxPO/h6IeaOhYYX0/iDLA891k76bzwNopI8WuOHUF4UpDfL3gZ4ZzEyLydZWScnlReEmyV+NLcQpAKuWtMs2dNLvT/hoUu1BevQETf/kYKjv+Am3LIzPyEhSlxkq6gXLDfcKWfyk8xs8heuZ3UFQNttOuNEkPTOgLsmnx1N9lOnSRjtGnoBhnZMhbiB/mTpJDZrF8/inCPrvyoInnIWq6tBSqXPkIftQ9cIW2wH0m3MXT6W7hnNnNFhhrIGkp9qC8ZiNm//opNj/Y+Hjgd1kW55omWP/h+J3SuKYHf9jgxNBRRC9+kcNWzBT71lFBerytnPX4c6PzefNWeexSym1KkuMDNqQT4wLFyixH8Ha7J6x0t13Pze8IasN/OlRaumkbU8xLlTT16kApddEzFeKipyzEfHfw09npBLl/sII7zw5mfd9+qHNnUPyZ24jwoZlDRF33/Cn8mUMofJezBx29PHctFddhB659tSeX3iJnAWZcPzX3DFFttLLkQliLTYIwCmU89+rYS3/2gPHdI591g5LbjziWGP8h0njpQh+SNDO06VmSVVrdGLsfbXNj6fYw5mepsxYkiLqYA1yH5mM/QO2LO9hqZ02gn9XcHlrJqe+h+N3/hhLz/LB7jaHUaalLiPnc/iLhbcbqJlGT3FoczfTUWOfWxgUa9f+Zfz5CzHs8jg8VdV77H/+ew0W/wiFF3Z0spgmQSY7cvD+CdPIqewbA9Qz8DJsZhQkNvw+E6+rryfN4lnnAcchLFpEib0JybgSFY69xtngZ8YFjbRyi8Dtvr5mv9KgcAHouEM/HLbP7SfoQlVNAg2spJnOjD4/v//PP5h+guti+eYXtYec1Xa+KYtsmqcczzJhlmM4JWNN2f5vX7O+8MkwTMgjTp8jscwI6FmsfZMt8apTDU9M0dV6+c4mZQdLAqUx/L8qmU3KV3nSESyYZ+vsdT6OTHbX3I/c0/wbrD0U+SndkYuTIZhzfVbehyz5GF80vCeuHJHcm041Pbu1A/wucC7qegwvSZhSGtoh8FUG5bqvwA1j5NrQ235RzK/ujwEYH/V3Y2+ayCTfEEGRtrTT0wrbyvUsK997TXqMaB4L670CkUUuXlLRmAi28nJt8K5mZut0Ib3Y/SH7CY3OZeXRd8xt/RYC63+yMmfODRRhv/v5xGm8BfPxAiGwo0VqEe4IjdM8MmN9cVGxM5/fcfBL8gxPeLn2tUmRPkngF+Hwf/u9Enxaae5vBi8qDEy/vvR840Fzo2cEf8+SofqrKPjjZce2vse9c+AJPvZv+2S5cEdKPoGWYEKSgJVJMCNKHzuwTZGH6pJlvuCrPNn2dxTcm5z0s6Zidr1mkeX7OFXzaSxfj0yUztIxnRbP55YnX/vSln+7Byfx327cH/kdt197fH8jkBhrVGlpap3Vq9pNVpJ+iNQYh3cx2YIArCJySpK1rUy2+5q3s47VWqmxiQbrHa9N0NUCWIMBNOknlqqW6Up6k5Z3AlLvlDJshP+SwxYHKm18dzh4I+7T86R6dne8ToX52eiHt/dt/eHrn+65b4Kd5fH7rNl709n/bgvMxmJ+04xf/+3/YetyKWiyz2wAAAABJRU5ErkJggg==
@@ -17,7 +17,6 @@
 // Generated by userscript/build.mjs; edit source files, then rebuild.
 (() => {
 'use strict';
-console.info('[Vatrix 0.3.7] script.loading');
 // Source: ../viewer/vendor/jsQR.js (Apache-2.0, see viewer/vendor/jsQR.LICENSE)
 const jsQR = (() => {
   const module = { exports: {} };
@@ -11842,59 +11841,6 @@ function createRealtimeMirror({ video, report, fallback, createMirrorStream, siz
   };
 }
 
-// Source: src/diagnostics.js
-/** Local-only, bounded diagnostics. Never persist or transmit media, seeds or URLs. */
-function createDiagnostics({ version = 'unknown', sink = console, capacity = 250, now = () => new Date().toISOString() } = {}) {
-  const entries = [];
-  let sequence = 0;
-  const limit = Math.max(1, Math.min(1000, Math.trunc(capacity) || 250));
-  const secret = /^(seed|token|cookie|authorization|rawValue|rawText|payload|url|src|currentSrc|href|pixels|imageData)$/i;
-  const cleanText = (value) => String(value)
-    .replace(/(?:https?:\/\/|blob:|data:)\S+/gi, '[URL]')
-    .replace(/[0-9]{20,}/g, '[long numeric payload]')
-    .slice(0, 500);
-  function snapshot(value, depth = 0) {
-    if (depth > 4) return '[depth limit]';
-    if (value instanceof Error || (value && typeof value === 'object' && typeof value.name === 'string' && typeof value.message === 'string')) {
-      return { name: cleanText(value.name), message: cleanText(value.message) };
-    }
-    if (typeof value === 'string') return cleanText(value);
-    if (typeof value === 'bigint') return '[bigint]';
-    if (typeof value === 'number') return Number.isFinite(value) ? value : String(value);
-    if (value == null || typeof value === 'boolean') return value;
-    if (Array.isArray(value)) return value.slice(0, 20).map((item) => snapshot(item, depth + 1));
-    if (typeof value === 'object') return Object.fromEntries(Object.entries(value).slice(0, 40)
-      .map(([key, item]) => [key, secret.test(key) ? '[redacted]' : snapshot(item, depth + 1)]));
-    return `[${typeof value}]`;
-  }
-  return {
-    log(event, details = {}, level = 'info') {
-      const entry = { sequence: ++sequence, time: now(), level, event: cleanText(event), details: snapshot(details) };
-      entries.push(entry);
-      if (entries.length > limit) entries.shift();
-      const method = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'info';
-      // Log a string snapshot, not live references which DevTools may expand later.
-      try { sink?.[method]?.(`[Vatrix ${version}] #${entry.sequence} ${entry.event}`, JSON.stringify(entry.details)); }
-      catch { /* Console failures must not change playback or decoding. */ }
-    },
-    dump() {
-      return `Vatrix ${version} diagnostics (local, redacted)\n${entries.map((entry) => JSON.stringify(entry)).join('\n')}`;
-    },
-  };
-}
-
-/** A media snapshot with no source URL or pixel data. */
-function introVideoState(video) {
-  const source = video.currentSrc || video.src || '';
-  return {
-    currentTime: video.currentTime, readyState: video.readyState, networkState: video.networkState,
-    paused: video.paused, seeking: video.seeking, ended: video.ended,
-    videoWidth: video.videoWidth, videoHeight: video.videoHeight, connected: video.isConnected,
-    crossOrigin: video.crossOrigin ?? null,
-    sourceKind: video.srcObject ? 'stream' : source.startsWith('blob:') ? 'blob' : source.startsWith('data:') ? 'data' : source ? 'url' : 'empty',
-  };
-}
-
 // Source: src/intro.js
 /** Media-event coordination, separate from DOM UI so seek/buffering races are testable. */
 function createIntroReader(video, {
@@ -12048,17 +11994,13 @@ function createIntroReader(video, {
 
 // Source: src/main.js
 /** Browser integration only. The renderer and desktop defaults are injected by the build. */
-function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroReader, audio, defaults, validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings, storage, menu, iconUrl, diagnostics, introVideoState, scriptVersion = 'unknown' }) {
+function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroReader, audio, defaults, validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings, storage, menu, iconUrl, scriptVersion = 'unknown' }) {
   const SELECTOR = '.bpx-player-primary-area video';
   const TOOLBAR_SELECTOR = '#arc_toolbar_report .video-toolbar-left-main';
   const STORAGE_KEY = 'vatrix.bilibili.settings.v1';
   // Per-video memory, keyed by BVID and part: what the intro QR said, plus
   // whatever the viewer corrected by hand on that page.
   const PAGES_KEY = 'vatrix.bilibili.pages.v1';
-  const log = (event, details = {}, level = 'info') => diagnostics?.log(event, details, level);
-  const mediaState = (video) => introVideoState?.(video) ?? { currentTime: video.currentTime, readyState: video.readyState };
-  let mountSequence = 0;
-  log('install.start', { scriptVersion, documentReady: document.readyState, documentHidden: document.hidden, decoderAvailable: typeof decodeQr === 'function' });
   let settings;
   let settingsNotice = '';
   let enabled = false;
@@ -12127,9 +12069,7 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
   enabled = autoEnabled();
 
   function mount(video, toolbar) {
-    const mountId = ++mountSequence;
     const mountedPageKey = pageKey;
-    log('player.mount', { mountId, candidates: document.querySelectorAll(SELECTOR).length, ...mediaState(video) });
     const area = video.closest('.bpx-player-primary-area');
     const wrapper = video.parentElement;
     const listeners = new AbortController();
@@ -12151,83 +12091,148 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
     ui.id = 'vatrix-userscript-ui';
     ui.style.cssText = 'display:inline-flex;align-items:center;position:relative;flex-shrink:0;margin-left:16px;pointer-events:auto;';
     const shadow = ui.attachShadow({ mode: 'open' });
+    // Bilibili's own theme variables (bili-theme map.css) inherit into the
+    // shadow tree, so the panel follows whichever theme the page has loaded;
+    // the fallbacks are its light values.
     shadow.innerHTML = `
       <style>
-        :host { font: 13px/1.5 system-ui,sans-serif; text-align: left; }
+        :host {
+          --vx-blue: var(--brand_blue, #00aeec);
+          --vx-blue-thin: var(--brand_blue_thin, #dff6fd);
+          --vx-surface: var(--bg1_float, #fff);
+          --vx-well: var(--graph_bg_regular, #f1f2f3);
+          --vx-line: var(--line_regular, #e3e5e7);
+          --vx-line-light: var(--line_light, #f1f2f3);
+          --vx-text1: var(--text1, #18191c);
+          --vx-text2: var(--text2, #61666d);
+          --vx-text3: var(--text3, #9499a0);
+          --vx-weak: var(--graph_weak, #c9ccd0);
+          --vx-white: var(--text_white, #fff);
+          --vx-red: var(--stress_red, #f85a54);
+          --vx-green: var(--success_green, #2ac864);
+          font-size: 14px; line-height: 1.5; text-align: left;
+        }
         * { box-sizing: border-box; }
         [hidden] { display: none !important; }
         button, input { font: inherit; color: inherit; }
-        button { border: 1px solid #46516b; background: #20293c; border-radius: 7px; padding: 6px 10px; cursor: pointer; }
-        button:hover { background: #334362; }
-        button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid #95b9ff; outline-offset: 2px; }
-        #open { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 4px;
-          white-space: nowrap; background: transparent; border: 0; color: var(--text2, #9499a0); font-size: 14px; }
-        #open:hover, #open[aria-expanded=true], :host([data-enabled=true]) #open { color: #00aeec; }
-        #open img { display: block; width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
-        dialog { position: fixed; margin: 0; width: min(360px, calc(100vw - 24px)); max-width: none;
-          padding: 16px; overflow-y: auto; border: 1px solid #46516b; border-radius: 12px;
-          background: #141b2a; color: #ecf0f8; color-scheme: dark; box-shadow: 0 10px 36px #0007; }
-        dialog::backdrop { background: #0003; }
-        form { margin: 0; }
-        header, .row { display: flex; align-items: center; gap: 8px; }
-        header { justify-content: space-between; margin-bottom: 10px; }
-        header strong { font-size: 14px; }
-        #build-version { font-size: 11px; font-weight: normal; color: #95a7c6; }
-        label { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; margin-bottom: 10px; }
-        input { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid #46516b; border-radius: 6px; background: #0c1220; }
-        .check { flex-direction: row; align-items: center; gap: 8px; }
-        .check input { width: 16px; height: 16px; margin: 0; accent-color: #00aeec; }
-        #from-description, #scan-intro, #copy-diagnostics { padding: 4px 8px; margin-bottom: 10px; font-size: 12px; }
-        #intro-status { margin: 0 0 10px; }
-        #log-details { margin-top: 10px; }
-        #log-details summary { cursor: pointer; }
-        #diagnostic-log { width: 100%; height: 160px; margin-top: 6px; background: #0c1220; color: #b7c9e9;
-          border: 1px solid #46516b; border-radius: 6px; font: 11px/1.4 monospace; resize: vertical; }
-        p { margin: 8px 0 0; color: #b4c1d8; overflow-wrap: anywhere; }
-        #toggle { flex: 1; background: #245b9c; }
-        [role=status][data-error=true] { color: #ffb3b3; }
-        small { display: block; color: #95a7c6; margin-bottom: 10px; }
+        button { cursor: pointer; }
+        :focus-visible { outline: 2px solid var(--vx-blue); outline-offset: 2px; }
+        #open { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0; border: 0; background: none;
+          color: var(--vx-text2); font-size: 13px; white-space: nowrap; transition: color .2s; }
+        #open:hover, #open[aria-expanded=true], :host([data-enabled=true]) #open { color: var(--vx-blue); }
+        #open img { display: block; width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
+        dialog { position: fixed; margin: 0; width: min(340px, calc(100vw - 24px)); max-width: none; padding: 0;
+          overflow-y: auto; border: 1px solid var(--vx-line); border-radius: 8px; background: var(--vx-surface);
+          color: var(--vx-text1); box-shadow: 0 0 30px rgba(0, 0, 0, .1); overscroll-behavior: contain; }
+        dialog[open] { animation: vx-pop .18s ease-out; }
+        @keyframes vx-pop { from { opacity: 0; transform: translateY(-6px); } }
+        dialog::backdrop { background: transparent; }
+        form { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 16px; }
+        header { display: flex; align-items: center; gap: 8px; }
+        header img { width: 22px; height: 22px; }
+        header strong { font-size: 16px; font-weight: 600; }
+        #build-version { font-size: 12px; color: var(--vx-text3); }
+        #close { display: grid; place-items: center; width: 28px; height: 28px; margin-left: auto; padding: 0; border: 0;
+          border-radius: 6px; background: none; color: var(--vx-text3); transition: background-color .2s, color .2s; }
+        #close:hover { background: var(--vx-well); color: var(--vx-text1); }
+        #close svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+        .hero { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 8px;
+          background: var(--vx-well); transition: background-color .25s; }
+        :host([data-enabled=true]) .hero { background: var(--vx-blue-thin); }
+        .hero > div { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+        .hero strong { font-size: 15px; font-weight: 600; }
+        #status { font-size: 12px; color: var(--vx-text2); overflow-wrap: anywhere; }
+        [role=status][data-error=true] { color: var(--vx-red); }
+        .switch, #toggle { appearance: none; position: relative; flex: none; width: 40px; height: 22px; margin: 0; padding: 0;
+          border: 0; border-radius: 11px; background: var(--vx-weak); cursor: pointer; transition: background-color .2s; }
+        .switch::after, #toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+          border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); transition: transform .2s; }
+        .switch:checked, #toggle[aria-checked=true] { background: var(--vx-blue); }
+        .switch:checked::after, #toggle[aria-checked=true]::after { transform: translateX(18px); }
+        .intro { display: flex; align-items: flex-start; gap: 8px; margin-top: -4px; font-size: 12px; color: var(--vx-text2); }
+        .intro::before { content: ""; flex: none; width: 6px; height: 6px; margin-top: 6px; border-radius: 50%;
+          background: var(--vx-weak); transition: background-color .2s; }
+        :host([data-intro=found]) .intro::before { background: var(--vx-green); }
+        :host([data-intro=scanning]) .intro::before { background: var(--vx-blue); animation: vx-blink 1s ease-in-out infinite; }
+        :host([data-intro=missing]) .intro::before, :host([data-intro=error]) .intro::before { background: var(--vx-red); }
+        @keyframes vx-blink { 50% { opacity: .3; } }
+        #intro-status { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+        .link { flex: none; padding: 0; border: 0; background: none; color: var(--vx-blue); font-size: 12px; transition: opacity .2s; }
+        .link:hover { opacity: .75; }
+        #audio-status { margin: -8px 0 0 14px; font-size: 12px; color: var(--vx-text2); overflow-wrap: anywhere; }
+        label { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; font-size: 13px; color: var(--vx-text2); }
+        input:not([type=checkbox]) { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--vx-line); border-radius: 6px;
+          background: var(--vx-well); color: var(--vx-text1); font-size: 14px; outline: none;
+          transition: border-color .2s, background-color .2s; }
+        input:not([type=checkbox]):hover { border-color: var(--vx-weak); }
+        input:not([type=checkbox]):focus { border-color: var(--vx-blue); background: var(--vx-surface); }
+        small { font-size: 12px; color: var(--vx-text3); }
+        .option { flex-direction: row; align-items: center; gap: 12px; color: var(--vx-text1); font-size: 14px; cursor: pointer; }
+        .option > span { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+        details { padding-top: 12px; border-top: 1px solid var(--vx-line-light); }
+        summary { display: flex; align-items: baseline; gap: 8px; list-style: none; color: var(--vx-text1); cursor: pointer; }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: ""; align-self: center; width: 6px; height: 6px; margin: -3px 2px 0 auto;
+          border-right: 1.5px solid var(--vx-text3); border-bottom: 1.5px solid var(--vx-text3); transform: rotate(45deg);
+          transition: transform .2s; }
+        details[open] summary::after { margin-top: 3px; transform: rotate(225deg); }
+        .manual { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+        .actions { display: flex; gap: 8px; }
+        .btn { height: 32px; padding: 0 14px; border: 1px solid var(--vx-line); border-radius: 6px; background: var(--vx-surface);
+          color: var(--vx-text1); font-size: 13px; transition: color .2s, border-color .2s, background-color .2s, filter .2s; }
+        .btn:hover { border-color: var(--vx-blue); color: var(--vx-blue); }
+        .btn.primary { margin-left: auto; border-color: var(--vx-blue); background: var(--vx-blue); color: var(--vx-white); }
+        .btn.primary:hover { color: var(--vx-white); filter: brightness(1.08); }
       </style>
       <button id="open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="panel">
-        <img id="brand-icon" width="20" height="20" alt="" aria-hidden="true" draggable="false">
-        <span id="button-label">Vatrix · 关</span>
+        <img id="brand-icon" width="22" height="22" alt="" aria-hidden="true" draggable="false">
+        <span id="button-label">Vatrix</span>
       </button>
       <dialog id="panel" aria-labelledby="panel-title">
       <form>
-        <header><strong id="panel-title">Vatrix · 画面还原 <span id="build-version"></span></strong><button id="close" type="button" aria-label="关闭设置">关闭</button></header>
-        <label>seed（数字或文字）<input name="seed" type="text" maxlength="4096" autocomplete="off" spellcheck="false"></label>
-        <div class="row">
-          <label>tile / tail（偶数）<input name="tile" type="number" min="2" max="16384" step="2" required></label>
-          <label>margin（偶数）<input name="margin" type="number" min="0" max="16384" step="2" required></label>
-        </div>
-        <div class="row">
-          <label>原始宽度<input name="width" type="number" min="1" max="16384" step="1" required></label>
-          <label>原始高度<input name="height" type="number" min="1" max="16384" step="1" required></label>
-        </div>
-        <small>填写加密前的尺寸，而非当前播放清晰度；五项参数需与加密端一致。</small>
-        <label class="check"><input name="audioMirror" type="checkbox">音频频谱翻转（与加密端保持一致）</label>
-        <label>旧版音频分块倒放 ms（0 = 无）<input name="audioMs" type="number" min="0" max="9999" step="1" required></label>
-        <label class="check"><input name="invert" type="checkbox">反色（与加密端保持一致）</label>
-        <label class="check"><input name="autoIntro" type="checkbox">自动读取片头二维码并启用还原</label>
-        <button id="from-description" type="button">读取简介参数</button>
-        <button id="scan-intro" type="button">识别当前二维码</button>
-        <p id="intro-status" role="status" aria-live="polite"></p>
-        <div class="row"><button id="toggle" type="button">启用还原</button><button type="submit">应用参数</button><button id="reset" type="button">默认</button></div>
-        <p id="status" role="status" aria-live="polite"></p>
+        <header>
+          <img id="panel-icon" width="22" height="22" alt="" aria-hidden="true" draggable="false">
+          <strong id="panel-title">Vatrix</strong><span id="build-version"></span>
+          <button id="close" type="button" aria-label="关闭"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12"/></svg></button>
+        </header>
+        <section class="hero">
+          <div><strong>画面还原</strong><span id="status" role="status" aria-live="polite"></span></div>
+          <button id="toggle" type="button" role="switch" aria-checked="false" aria-label="画面还原"></button>
+        </section>
+        <div class="intro"><span id="intro-status" role="status" aria-live="polite"></span><button id="scan-intro" class="link" type="button">识别当前画面</button></div>
         <p id="audio-status" role="status" aria-live="polite" hidden></p>
-        <button id="copy-diagnostics" type="button">复制诊断日志</button>
-        <p id="log-status" role="status" aria-live="polite"></p>
-        <details id="log-details"><summary>查看诊断日志（本地，已脱敏）</summary>
-          <textarea id="diagnostic-log" readonly spellcheck="false" aria-label="Vatrix 诊断日志"></textarea>
+        <label>seed<input name="seed" type="text" maxlength="4096" autocomplete="off" spellcheck="false"><small>片头二维码不含 seed 时，在这里填写</small></label>
+        <label class="option"><span>自动识别片头二维码<small>带 Vatrix 片头的视频会自动开启还原</small></span><input class="switch" name="autoIntro" type="checkbox" role="switch"></label>
+        <details id="manual">
+          <summary>手动参数<small>没有片头二维码时使用</small></summary>
+          <div class="manual">
+            <div class="grid">
+              <label>tile<input name="tile" type="number" min="2" max="16384" step="2" required></label>
+              <label>margin<input name="margin" type="number" min="0" max="16384" step="2" required></label>
+              <label>原始宽度<input name="width" type="number" min="1" max="16384" step="1" required></label>
+              <label>原始高度<input name="height" type="number" min="1" max="16384" step="1" required></label>
+            </div>
+            <label class="option"><span>反色</span><input class="switch" name="invert" type="checkbox" role="switch"></label>
+            <label class="option"><span>音频频谱翻转</span><input class="switch" name="audioMirror" type="checkbox" role="switch"></label>
+            <label>旧版音频分块倒放（ms，0 为无）<input name="audioMs" type="number" min="0" max="9999" step="1" required></label>
+            <div class="actions">
+              <button id="from-description" class="btn" type="button">读取简介</button>
+              <button id="reset" class="btn" type="button">恢复默认</button>
+              <button class="btn primary" type="submit">应用</button>
+            </div>
+          </div>
         </details>
-        <small>勾选频谱翻转或倒放块长大于 0 时一并还原声音；弹幕和播放控制保留。</small>
       </form></dialog>`;
-    const brandIcon = shadow.getElementById('brand-icon');
     shadow.getElementById('build-version').textContent = `v${scriptVersion}`;
-    if (iconUrl) brandIcon.src = iconUrl;
-    else brandIcon.hidden = true;
+    for (const id of ['brand-icon', 'panel-icon']) {
+      const icon = shadow.getElementById(id);
+      if (iconUrl) icon.src = iconUrl;
+      else icon.hidden = true;
+    }
     if (hydrated()) toolbar.after(ui);
     const form = shadow.querySelector('form');
+    const manual = shadow.getElementById('manual');
     const dialog = shadow.getElementById('panel');
     const status = shadow.getElementById('status');
     const toggle = shadow.getElementById('toggle');
@@ -12247,7 +12252,7 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
     function positionDialog() {
       if (!dialog.open) return;
       const anchor = openButton.getBoundingClientRect();
-      const width = Math.min(360, window.innerWidth - 24);
+      const width = Math.min(340, window.innerWidth - 24);
       // Prefer directly below the button; keep a usable scroll area on very short viewports.
       const top = Math.max(12, Math.min(anchor.bottom + 8, window.innerHeight - 172));
       dialog.style.left = `${Math.max(12, Math.min(anchor.left, window.innerWidth - width - 12))}px`;
@@ -12288,33 +12293,27 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
       const label = shadow.getElementById('intro-status');
       ui.dataset.intro = state;
       label.dataset.error = String(state === 'error');
-      scanButton.textContent = state === 'scanning' ? '识别中…（点击重试）' : '识别当前二维码';
+      scanButton.textContent = state === 'scanning' ? '识别中…' : '识别当前画面';
       label.textContent = {
-        off: '二维码自动识别已关闭，可手动识别当前画面。',
-        waiting: '二维码：等待片头画面；从中途进入可拖回开头。',
-        scanning: '二维码：等待视频帧并识别中…',
-        found: '二维码：参数已读取并应用（含音频块长）。',
-        missing: '二维码：本轮未识别到有效参数。可暂停在二维码处，点击「识别当前二维码」重试。',
-        error: `二维码读取或应用失败：${error?.message ?? error ?? '未知原因'}。若含跨域限制提示，请保留错误信息。`,
+        off: '片头识别已关闭，可手动识别当前画面。',
+        waiting: '等待片头二维码；从中途进入可拖回开头。',
+        scanning: '正在识别片头二维码…',
+        found: '已读取片头二维码，参数已应用。',
+        missing: '没有识别到片头二维码。可暂停在二维码处再识别。',
+        error: `二维码读取失败：${error?.message ?? error ?? '未知原因'}`,
       }[state];
     }
     function initializeIntroReader() {
       if (introReader) return true;
-      const components = { createIntroReader: typeof createIntroReader, scanIntro: typeof scanIntro, decodeQr: typeof decodeQr };
-      log('qr.reader-init', { mountId, ...components, ...mediaState(video) });
       try {
-        if (Object.values(components).some((type) => type !== 'function')) throw new Error('二维码识别组件未加载完整');
+        if ([createIntroReader, scanIntro, decodeQr].some((part) => typeof part !== 'function')) throw new Error('二维码识别组件未加载完整');
         introReader = createIntroReader(video, {
           scan: scanIntro, decode: decodeQr, enabled: () => settings.autoIntro,
           isCurrent: () => !dead && video.isConnected && videoPageKey(location.href) === mountedPageKey,
           onHeader: applyIntroHeader, report: introReport, signal: listeners.signal,
-          trace: (event, details) => log(`qr.${event}`, { mountId, documentHidden: document.hidden, ...mediaState(video), ...details },
-            event.includes('error') || event.includes('failed') ? 'error' : event.includes('rejected') || event.includes('discarded') ? 'warn' : 'info'),
         });
-        log('qr.reader-ready', { mountId });
         return true;
       } catch (error) {
-        log('qr.reader-init-failed', { mountId, error }, 'error');
         introReport('error', error);
         return false;
       }
@@ -12332,24 +12331,23 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
         audioMirror: header.audioMirror,
         seed: header.seed === null ? settings.seed : String(header.seed),
       });
-      if (!apply()) { log('qr.settings-rejected', { mountId }, 'warn'); return false; }
+      if (!apply()) return false;
       if (!enabled) {
         enabled = true;
         startRenderer();
         updateToggle();
       }
-      if (!enabled) { log('qr.renderer-not-enabled', { mountId }, 'warn'); return false; }
+      if (!enabled) return false;
       rememberPage(settings, 'intro');
       message(header.seed === null
-        ? '已从片头二维码读取尺寸、tile、margin 和反色（片头不含 seed，沿用当前 seed）并启用还原，参数已记住。'
-        : '已从片头二维码读取全部参数（含 seed）并启用还原，参数已记住。');
+        ? '已按片头二维码开启；片头不含 seed，沿用上面填的 seed。'
+        : '已按片头二维码开启，本视频的参数已记住。');
       return true;
     }
     const audioStatus = shadow.getElementById('audio-status');
     let audioRestorer = null;
     let audioSource = '';
     function audioReport(state, text) {
-      log('audio.state', { mountId, state, message: text }, state === 'error' ? 'error' : 'info');
       ui.dataset.audio = state;
       if (audioRestorer) ui.dataset.audioMode = audioRestorer.mode;
       audioStatus.textContent = text;
@@ -12379,8 +12377,6 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
           return;
         }
         audioSource = source;
-        const trace = (event, details) => log(`audio.${event}`, { mountId, ...details },
-          /error|rejected|failed|unavailable/.test(event) ? 'warn' : 'info');
         const download = () => audio.createAudioRestorer({
           video,
           blockMs: settings.audioMs,
@@ -12388,21 +12384,19 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
           host: shadow,
           locate: (signal) => audio.locateAudio(video, audioUrls, { since, signal }),
           report: audioReport,
-          trace,
         });
         // Mirror-only uploads are undone on the video's own sound; block reversal needs the whole track.
         audioRestorer = settings.audioMs === 0
-          ? audio.createRealtimeMirror({ video, report: audioReport, fallback: download, trace })
+          ? audio.createRealtimeMirror({ video, report: audioReport, fallback: download })
           : download();
         ui.dataset.audioMode = audioRestorer.mode;
       } catch (error) {
-        log('audio.init-failed', { mountId, error }, 'error');
         audioReport('error', `音频初始化失败：${error.message ?? error}`);
       }
     }
     function updateToggle() {
-      toggle.textContent = enabled ? '停用还原' : '启用还原';
-      shadow.getElementById('button-label').textContent = enabled ? 'Vatrix · 开' : 'Vatrix · 关';
+      toggle.setAttribute('aria-checked', String(enabled));
+      openButton.title = enabled ? '画面还原已开启' : '画面还原未开启';
       ui.dataset.enabled = String(enabled);
     }
     function cancelFrame() {
@@ -12419,12 +12413,11 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
       hasDrawn = false;
     }
     function fail(error) {
-      log('renderer.error', { mountId, error }, 'error');
       enabled = false;
       stopRenderer();
       updateToggle();
       syncAudio();
-      message(`还原已停止，保留原画面：${error.message ?? error}。请检查参数、WebGL 或视频跨域限制。`, true);
+      message(`已停止，显示原画面：${error.message ?? error}`, true);
       open();
     }
     function syncBox() {
@@ -12453,7 +12446,7 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
             if (gl.getError() !== gl.NO_ERROR) throw new Error('视频纹理上传失败');
             hasDrawn = true;
             const memory = pageMemory()?.source === 'intro' ? ' · 已记住本视频的参数' : '';
-            message(`还原中 · ${settings.width}×${settings.height} · 反色${settings.invert ? '开' : '关'} · 视频 ${video.videoWidth}×${video.videoHeight}${memory}${settingsNotice ? ` · ${settingsNotice}` : ''}`);
+            message(`还原中 · 视频 ${video.videoWidth}×${video.videoHeight}${memory}${settingsNotice ? ` · ${settingsNotice}` : ''}`);
           }
           canvas.style.visibility = 'visible';
         } catch (error) { fail(error); return; }
@@ -12479,9 +12472,11 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
       syncAudio();
     }
     function apply() {
-      if (!form.reportValidity()) {
-        log('settings.form-invalid', { mountId, fields: [...form.elements]
-          .filter((element) => element.validity && !element.validity.valid).map((element) => element.name) }, 'warn');
+      // The manual fields live in a collapsed section; open it so the browser can point at the bad one.
+      if (!form.checkValidity()) {
+        manual.open = true;
+        form.reportValidity();
+        message('手动参数有误，请检查标红的一项。', true);
         return false;
       }
       const previousAutoIntro = settings.autoIntro;
@@ -12492,7 +12487,7 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
         values.autoIntro = form.elements.namedItem('autoIntro').checked;
         values.audioMs = form.elements.namedItem('audioMs').value;
         settings = validateSettings(values, defaults);
-      } catch (error) { log('settings.validation-failed', { mountId, error }, 'warn'); message(error.message, true); return false; }
+      } catch (error) { message(error.message, true); return false; }
       settingsNotice = '';
       try { storage.set(STORAGE_KEY, settings); }
       catch { settingsNotice = '设置保存失败，本次会话仍有效'; }
@@ -12500,7 +12495,7 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
       rememberPage(settings, 'manual');
       if (enabled) startRenderer();
       else {
-        message(`参数已应用；还原处于关闭状态。${settingsNotice}`);
+        message(`参数已应用，还原未开启。${settingsNotice}`);
         syncAudio();
       }
       if (settings.autoIntro !== previousAutoIntro) {
@@ -12530,42 +12525,19 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
         const text = description?.innerText ?? description?.textContent ?? '';
         const imported = validateSettings(descriptionSettings(text), defaults);
         fill(imported);
-        message('已填入简介中的五项参数；点击「应用参数」或「启用还原」生效。');
+        message('已填入简介里的参数，点「应用」或打开还原后生效。');
       } catch (error) { message(error.message, true); }
     });
     on(form, 'submit', (event) => { event.preventDefault(); apply(); });
     on(scanButton, 'click', async () => {
-      log('qr.manual-click', { mountId, readerReady: Boolean(introReader), dead,
-        pageMatches: videoPageKey(location.href) === mountedPageKey, ...mediaState(video) });
       // A click must respond even if a different component failed during mount.
       introReport('scanning');
       if (!initializeIntroReader()) return;
       try {
         const applied = await introReader.request({ manual: true });
-        log('qr.manual-complete', { mountId, applied, state: ui.dataset.intro });
-        if (!applied && ui.dataset.intro === 'scanning') introReport('error', new Error('识别任务提前结束，请复制诊断日志查看原因。'));
+        if (!applied && ui.dataset.intro === 'scanning') introReport('error', new Error('识别提前结束，请重试'));
       } catch (error) {
-        log('qr.manual-failed', { mountId, error }, 'error');
         introReport('error', error);
-      }
-    });
-    const logDetails = shadow.getElementById('log-details');
-    const logText = shadow.getElementById('diagnostic-log');
-    const readLogs = () => diagnostics?.dump() ?? `Vatrix ${scriptVersion}: 诊断组件未加载，请检查控制台。`;
-    on(logDetails, 'toggle', () => { if (logDetails.open) logText.value = readLogs(); });
-    on(shadow.getElementById('copy-diagnostics'), 'click', async () => {
-      log('diagnostics.copy', { mountId });
-      const text = readLogs();
-      logText.value = text;
-      try {
-        if (!navigator.clipboard?.writeText) throw new Error('Clipboard API not available');
-        await navigator.clipboard.writeText(text);
-        shadow.getElementById('log-status').textContent = '诊断日志已复制。';
-      } catch {
-        logDetails.open = true;
-        logText.focus();
-        logText.select();
-        shadow.getElementById('log-status').textContent = '请按 Ctrl+C 复制下方已选中的日志。';
       }
     });
     on(toggle, 'click', () => {
@@ -12574,7 +12546,7 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
         stopRenderer();
         updateToggle();
         syncAudio();
-        message('还原已关闭，显示原画面。');
+        message('已关闭，显示原画面。');
       } else if (apply()) {
         enabled = true;
         startRenderer();
@@ -12624,9 +12596,8 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
     resizeObserver.observe(wrapper);
     fill();
     updateToggle();
-    message(settingsNotice || '还原未启用；请核对 seed、tile、margin 和原始宽高，再点击「启用还原」。', Boolean(settingsNotice));
+    message(settingsNotice || '未开启。带 Vatrix 片头的视频会自动开启。', Boolean(settingsNotice));
     if (settingsNotice) open();
-    log('ui.handlers-ready', { mountId, autoIntro: settings.autoIntro, restorationEnabled: enabled });
     // Bind QR actions before starting optional media components. A synchronous
     // audio initialization failure must not leave a visible but inert QR button.
     initializeIntroReader();
@@ -12643,7 +12614,6 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
         if (reopen) open();
       },
       dispose() {
-        log('player.dispose', { mountId });
         dead = true;
         open(false);
         listeners.abort();
@@ -12725,11 +12695,9 @@ function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroRea
   return { dispose };
 }
 
-const diagnostics = createDiagnostics({ version: "0.3.7" });
-try {
 installUserscript({
   createRestorer, scanIntro, decodeQr, createIntroReader, validateSettings, querySettings, descriptionSettings, videoPageKey,
-  diagnostics, introVideoState, scriptVersion: "0.3.7",
+  scriptVersion: "0.3.8",
   iconUrl: "data:image/png;base64,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",
   pageSettings, rememberPageSettings, forgetPageSettings,
   audio: {
@@ -12742,5 +12710,4 @@ installUserscript({
   storage: { get: GM_getValue, set: GM_setValue },
   menu: { register: GM_registerMenuCommand, unregister: GM_unregisterMenuCommand },
 });
-} catch (error) { diagnostics.log('bootstrap.failed', { error }, 'error'); throw error; }
 })();

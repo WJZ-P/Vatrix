@@ -87,8 +87,11 @@ test('userscript metadata and toolbar embed the generated PNGs without a remote 
     if (field === 'icon64') assert.ok(bundle.includes(`iconUrl: ${JSON.stringify(match[1])}`));
   }
   const main = (await read('userscript/src/main.js')).toString();
+  // The toolbar button and the panel header both show it.
   assert.match(main, /<img id="brand-icon"/);
-  assert.match(main, /brandIcon\.src = iconUrl/);
+  assert.match(main, /<img id="panel-icon"/);
+  assert.match(main, /\['brand-icon', 'panel-icon'\]/);
+  assert.match(main, /icon\.src = iconUrl/);
 });
 
 test('every icon in the Tauri configuration exists', async () => {

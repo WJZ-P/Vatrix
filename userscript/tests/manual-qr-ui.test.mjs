@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { installUserscript } from '../src/main.js';
 import { createIntroReader } from '../src/intro.js';
-import { createDiagnostics, introVideoState } from '../src/diagnostics.js';
 import { validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings } from '../src/settings.js';
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
@@ -41,7 +40,8 @@ class Shadow {
       return element;
     });
     this.form.elements.namedItem = (name) => this.form.elements.find((element) => element.name === name);
-    this.form.reportValidity = () => this.form.elements.every((element) => element.validity.valid);
+    this.form.checkValidity = () => this.form.elements.every((element) => element.validity.valid);
+    this.form.reportValidity = this.form.checkValidity;
   }
   getElementById(id) { return this.nodes.get(id); }
   querySelector(selector) { assert.equal(selector, 'form'); return this.form; }
@@ -67,10 +67,8 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
   }
   const callbacks = [];
   const order = [];
-  const copied = [];
   const overrides = {
     document, location, window: Object.assign(new EventTarget(), { innerWidth: 1200, innerHeight: 900 }),
-    navigator: { clipboard: { writeText: async (text) => copied.push(text) } },
     getComputedStyle: () => ({ position: 'relative' }),
     MutationObserver: class { observe() {} disconnect() {} }, ResizeObserver: class { observe() {} disconnect() {} },
     requestAnimationFrame: () => 1, cancelAnimationFrame: () => {}, setInterval: () => 1, clearInterval: () => {},
@@ -90,10 +88,9 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
       else delete globalThis[key];
     }
   });
-  const diagnostics = createDiagnostics({ version: 'ui-test', sink: {} });
   let initCount = 0;
   const app = installUserscript({
-    defaults, diagnostics, introVideoState, scriptVersion: 'ui-test',
+    defaults, scriptVersion: 'ui-test',
     validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings,
     storage: { get: (key, fallback) => saved.get(key) ?? fallback, set: (key, value) => saved.set(key, value) },
     menu: { register: () => 1, unregister: () => {} },
@@ -117,7 +114,7 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
       } },
   });
   t.after(() => app.dispose());
-  return { panel: toolbar.nextElementSibling.shadowRoot, video, location, callbacks, order, copied, diagnostics };
+  return { panel: toolbar.nextElementSibling.shadowRoot, video, location, callbacks, order };
 }
 
 test('actual manual click handler responds immediately and starts a paused-frame scan', async (t) => {
@@ -128,8 +125,8 @@ test('actual manual click handler responds immediately and starts a paused-frame
   await flush();
   assert.equal(r.callbacks.length, 1);
   assert.equal(r.callbacks[0].untilSeconds, Infinity);
-  assert.match(r.panel.getElementById('intro-status').textContent, /未识别/);
-  for (const stage of ['qr.manual-click', 'qr.manual-request', 'qr.scan-start', 'qr.manual-complete']) assert.ok(r.diagnostics.dump().includes(stage));
+  assert.match(r.panel.getElementById('intro-status').textContent, /没有识别到/);
+  assert.equal(r.panel.getElementById('scan-intro').textContent, '识别当前画面');
 });
 
 test('manual click retries a reader whose initial construction failed', async (t) => {
@@ -147,7 +144,7 @@ test('synchronous audio failure does not leave the QR button uninitialized', asy
   r.panel.getElementById('scan-intro').dispatchEvent(new Event('click'));
   await flush();
   assert.equal(r.callbacks.length, 1);
-  assert.ok(r.diagnostics.dump().includes('audio.init-failed'));
+  assert.match(r.panel.getElementById('audio-status').textContent, /音频初始化失败/);
 });
 
 test('stale binding reports an explicit error rather than a silent no-op', async (t) => {
@@ -157,7 +154,6 @@ test('stale binding reports an explicit error rather than a silent no-op', async
   await flush();
   assert.equal(r.callbacks.length, 0);
   assert.match(r.panel.getElementById('intro-status').textContent, /绑定已过期/);
-  assert.ok(r.diagnostics.dump().includes('stale-video-binding'));
 });
 
 test('the actual form applies decoded parameters and exposes the script version', async (t) => {
@@ -165,39 +161,19 @@ test('the actual form applies decoded parameters and exposes the script version'
   r.panel.getElementById('scan-intro').dispatchEvent(new Event('click'));
   await flush();
   assert.equal(r.panel.form.elements.namedItem('width').value, 640);
-  assert.match(r.panel.getElementById('intro-status').textContent, /参数已读取并应用/);
+  assert.match(r.panel.getElementById('intro-status').textContent, /已读取片头二维码/);
   assert.equal(r.panel.getElementById('build-version').textContent, 'vui-test');
-  assert.ok(!r.diagnostics.dump().includes('sensitive-seed'));
 });
 
-test('diagnostic copy uses only the redacted in-memory log', async (t) => {
-  const r = setup(t);
-  r.panel.getElementById('copy-diagnostics').dispatchEvent(new Event('click'));
-  await flush();
-  assert.equal(r.copied.length, 1);
-  assert.match(r.copied[0], /Vatrix ui-test/);
-  assert.ok(!r.copied[0].includes('sensitive-seed'));
-  assert.match(r.panel.getElementById('log-status').textContent, /已复制/);
-});
-
-test('clipboard rejection reveals selectable logs rather than doing nothing', async (t) => {
-  const r = setup(t);
-  navigator.clipboard.writeText = async () => { throw new Error('permission denied'); };
-  r.panel.getElementById('copy-diagnostics').dispatchEvent(new Event('click'));
-  await flush();
-  assert.equal(r.panel.getElementById('log-details').open, true);
-  assert.equal(r.panel.getElementById('diagnostic-log').selected, true);
-  assert.match(r.panel.getElementById('log-status').textContent, /Ctrl\+C/);
-});
-
-test('a rejected form identifies the blocking field in diagnostics', async (t) => {
+test('a rejected form opens the collapsed manual fields so the bad one can be shown', async (t) => {
   const r = setup(t, { result: header });
+  assert.notEqual(r.panel.getElementById('manual').open, true, 'manual fields start collapsed');
   r.panel.form.elements.namedItem('audioMs').validity.valid = false;
   r.panel.getElementById('scan-intro').dispatchEvent(new Event('click'));
   await flush();
   assert.match(r.panel.getElementById('intro-status').textContent, /参数未成功应用/);
-  assert.ok(r.diagnostics.dump().includes('settings.form-invalid'));
-  assert.ok(r.diagnostics.dump().includes('"fields":["audioMs"]'));
+  assert.equal(r.panel.getElementById('manual').open, true);
+  assert.match(r.panel.getElementById('status').textContent, /手动参数有误/);
 });
 
 test('a mirror-only plan restores in real time, with the download restorer as its fallback', (t) => {
