@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { styled } from "@linaria/react";
 
-import { type EncoderInfo, type PlanPreview, hardwareEncoder, planPreview } from "../ipc";
+import { type EncoderInfo, hardwareEncoder, planPreview } from "../ipc";
 import { Badge, Card, CardTitle, Field, Input, Label, Note, Row, Stepper, Switch } from "./ui";
 
 export interface PlanSettings {
@@ -27,55 +26,11 @@ export interface PlanSettings {
 interface Props {
   settings: PlanSettings;
   onChange: (settings: PlanSettings) => void;
-  /** The grid only means something once a file supplies the size. */
-  hasFile: boolean;
-}
-
-/** The grid the settings produce, as validated by the core crate. */
-const Summary = styled.div`
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  padding: 10px 12px;
-  border-left: 2px solid;
-  border-image: var(--accent-grad) 1;
-  background: linear-gradient(90deg, var(--accent-soft), rgba(99, 102, 241, 0.05) 70%, transparent);
-  animation: vx-fade 240ms var(--ease);
-
-  b {
-    font-size: 20px;
-    font-weight: 600;
-    color: #bae6fd;
-    font-variant-numeric: tabular-nums;
-  }
-
-  span {
-    font-size: 12px;
-    color: var(--text-3);
-  }
-`;
-
-function PlanSummary({ preview, error, hasFile }: { preview: PlanPreview | null; error: string | null; hasFile: boolean }) {
-  if (!hasFile) return <Note data-tone="muted">载入视频后，按它的尺寸计算分块。</Note>;
-  if (error) return <Note data-tone="error">{error}</Note>;
-  if (!preview) return null;
-  const { work } = preview;
-  const padded = work.pad_right || work.pad_bottom;
-  return (
-    <Summary key={`${preview.tile_count}-${preview.upload_width}`}>
-      <b>{preview.tile_count.toLocaleString()}</b>
-      <span>
-        块 · {preview.columns} × {preview.rows} · 上传 {preview.upload_width} × {preview.upload_height}
-        {padded ? ` · 补边 ${work.pad_right} / ${work.pad_bottom}` : ""}
-      </span>
-    </Summary>
-  );
 }
 
 /** Every setting that decides how a video is scrambled, in one list. */
-export function PlanPanel({ settings, onChange, hasFile }: Props) {
-  const [preview, setPreview] = useState<PlanPreview | null>(null);
+export function PlanPanel({ settings, onChange }: Props) {
+  // The grid itself is none of the viewer's business; only a setting the core rejects is shown.
   const [error, setError] = useState<string | null>(null);
   // undefined while detecting, null when no hardware encoder initialises.
   const [encoder, setEncoder] = useState<EncoderInfo | null | undefined>(undefined);
@@ -99,15 +54,11 @@ export function PlanPanel({ settings, onChange, hasFile }: Props) {
   useEffect(() => {
     let cancelled = false;
     planPreview({ width, height, tile, margin })
-      .then((result) => {
-        if (cancelled) return;
-        setPreview(result);
-        setError(null);
+      .then(() => {
+        if (!cancelled) setError(null);
       })
       .catch((reason: unknown) => {
-        if (cancelled) return;
-        setPreview(null);
-        setError(String(reason));
+        if (!cancelled) setError(String(reason));
       });
     return () => {
       cancelled = true;
@@ -127,7 +78,7 @@ export function PlanPanel({ settings, onChange, hasFile }: Props) {
           <Stepper label="margin" value={margin} step={2} onChange={(value) => set({ margin: value })} />
         </Field>
       </Row>
-      <PlanSummary preview={preview} error={error} hasFile={hasFile} />
+      {error && <Note data-tone="error">{error}</Note>}
       <Field>
         <Label>seed（数字或任意文字）</Label>
         <Input type="text" spellCheck={false} value={settings.seed} onChange={(e) => set({ seed: e.currentTarget.value })} />

@@ -196,15 +196,20 @@ const Slot = styled.figure`
   }
 `;
 
+/**
+ * The scrubber: a hairline track, the played part in the accent band, and a
+ * slim playhead instead of a knob. The playhead is 4 px wide, so the fill and
+ * the playhead never visibly part.
+ */
 const Timeline = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 
   input {
     appearance: none;
     flex: 1;
-    height: 16px;
+    height: 22px;
     margin: 0;
     background: transparent;
     cursor: pointer;
@@ -214,23 +219,32 @@ const Timeline = styled.div`
     height: 4px;
     background:
       linear-gradient(90deg, #22d3ee, #3b82f6) 0 0 / var(--progress) 100% no-repeat,
-      var(--surface-3);
+      rgba(148, 163, 184, 0.16);
+    transition: background-color 200ms var(--ease);
+  }
+
+  input:hover::-webkit-slider-runnable-track {
+    background-color: rgba(148, 163, 184, 0.26);
   }
 
   input::-webkit-slider-thumb {
     appearance: none;
-    width: 12px;
-    height: 12px;
-    margin-top: -4px;
+    width: 4px;
+    height: 16px;
+    margin-top: -6px;
+    border-radius: 1px;
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
-    transition: transform 160ms var(--spring), box-shadow 160ms var(--ease);
+    box-shadow: 0 0 0 1px rgba(8, 47, 73, 0.55), 0 0 8px rgba(56, 189, 248, 0.55);
+    transition: transform 220ms var(--spring), box-shadow 220ms var(--ease);
   }
 
-  input:hover::-webkit-slider-thumb,
+  input:hover::-webkit-slider-thumb {
+    transform: scaleY(1.2);
+    box-shadow: 0 0 0 1px rgba(8, 47, 73, 0.55), 0 0 14px rgba(56, 189, 248, 0.95);
+  }
+
   input:active::-webkit-slider-thumb {
-    transform: scale(1.3);
-    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.5);
+    transform: scale(1.5, 1.3);
   }
 
   input:disabled {
@@ -238,12 +252,17 @@ const Timeline = styled.div`
     cursor: default;
   }
 
-  span {
+  .time {
     min-width: 84px;
     color: var(--text-3);
     font-size: 12px;
     font-variant-numeric: tabular-nums;
     text-align: right;
+  }
+
+  .time b {
+    color: var(--text-2);
+    font-weight: 500;
   }
 `;
 
@@ -496,8 +515,8 @@ export function SourcePanel({ file, info, error, job, outputOffset, onFile }: Pr
             style={{ "--progress": `${duration ? (seconds / duration) * 100 : 0}%` } as CSSProperties}
             onChange={(e) => setSeconds(Number(e.currentTarget.value))}
           />
-          <span>
-            {clock(seconds)} / {clock(duration)}
+          <span className="time">
+            <b>{clock(seconds)}</b> / {clock(duration)}
           </span>
         </Timeline>
       )}

@@ -161,7 +161,6 @@ function App() {
           <SettingsColumn>
             <PlanPanel
               settings={settings}
-              hasFile={Boolean(info)}
               onChange={(next) => setSettings((current) => ({ ...current, ...next }))}
             />
           </SettingsColumn>
