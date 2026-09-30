@@ -4,7 +4,7 @@
 声音也可以一起扰乱，片头一秒的二维码记录还原所需的参数，所以观众不用手动填写。
 
 - **桌面端**（`app/`，Tauri）：拖入视频 → 打乱画面（可选反色、声音频谱翻转）→ 加上片头二维码 → 输出可直接上传的 mp4。
-- **浏览器脚本**（`userscript/vatrix.user.js`，油猴）：在 B 站播放页读取片头二维码，用 WebGL2 还原画面、实时还原声音。
+- **浏览器脚本**（`userscript/vatrix.user.js`，油猴）：在 B 站和 YouTube 播放页读取片头二维码，用 WebGL2 还原画面、实时还原声音。
 - **核心库**（仓库根目录，`vatrix-core`）：分块排列、片头协议和音频变换，桌面端和浏览器端逐位一致。
 
 这是可逆的扰乱，不是加密：知道参数的人都能还原。平台会重新编码和缩放上传的视频，整套设计围绕"转码之后仍能还原到可看"展开。
@@ -16,7 +16,7 @@ scripts/fetch-ffmpeg.ps1              # 下载 ffmpeg 到 tools/ffmpeg（桌面�
 cd app && npm install && npm run tauri   # 开发模式启动桌面端
 ```
 
-浏览器端：在油猴里安装 `userscript/vatrix.user.js`，打开用桌面端加密并上传的 B 站视频即可。
+浏览器端：在油猴里安装 `userscript/vatrix.user.js`，打开用桌面端加密并上传的 B 站或 YouTube 视频即可。
 各部分的细节见 [app/README.md](app/README.md) 和 [userscript/README.md](userscript/README.md)。
 
 ## 核心库
@@ -142,9 +142,10 @@ psnr/ssim 的参考就此被改掉；Matroska 把 1/30 s 舍入到毫秒，按�
 `viewer/index.html` 是开发用测试页，`node viewer/serve.mjs` 起本地服务后打开 `http://127.0.0.1:8765/`，
 可加载 `target/experiment/` 里的转码结果；`?url=&tile=&margin=&t=` 参数可直接定位。
 
-## B 站油猴插件
+## 油猴插件（B 站 / YouTube）
 
-`userscript/vatrix.user.js` 是可直接安装的单文件脚本，仅匹配 `https://www.bilibili.com/video/*`。
+`userscript/vatrix.user.js` 是可直接安装的单文件脚本，匹配 `https://www.bilibili.com/video/*` 和 `https://www.youtube.com/*`
+（YouTube 只在 `/watch?v=` 页面挂载，入口在点赞左侧）。以下以 B 站为例，YouTube 的差异见 userscript/README.md。
 通过 `.bpx-player-primary-area video` 定位播放器，在原视频层叠加 WebGL2 还原画面，保留原播放器控制。
 默认 `seed="20040821"`、`tile=32`、`margin=0`；`tail` 作为 `tile` 的兼容别名。
 默认值与 Tauri 共用 `app/src/default-settings.json`，构建脚本内联 `viewer/vatrix.js`，不加载远程依赖。

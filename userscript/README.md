@@ -1,6 +1,7 @@
-# Vatrix B 站油猴插件
+# Vatrix 油猴插件（B 站 / YouTube）
 
-在 `.bpx-player-primary-area` 内查找 `video`，用 WebGL2 叠加还原画面。
+在 B 站（`.bpx-player-primary-area` 内的 `video`）和 YouTube（`#movie_player video.video-stream`）的播放器上，
+用 WebGL2 叠加还原画面。站点之间的差异（播放器、入口位置、主题、广告）都在 `src/sites.js` 里，其余逻辑共用。
 直接复用 `viewer/vatrix.js` 的 SplitMix64、Fisher–Yates、FNV-1a 和 margin 裁除逻辑。
 不重新下载视频，不改视频 `src`、音轨、弹幕或播放进度。
 
@@ -9,8 +10,9 @@
 1. 首次安装：在油猴管理器中新建脚本，把 `userscript/vatrix.user.js` 的**完整内容**粘贴进去并保存。
    从旧版升级：在原脚本编辑页全文替换、保存，再刷新视频页；不要同时启用两份副本。
    0.3.7 起脚本名改为 **Vatrix**：油猴按名称识别脚本，装新版后要手动删掉旧的「Vatrix Bilibili Restorer」。
-2. 打开或刷新 `https://www.bilibili.com/video/*` 视频页。带 Vatrix 片头的视频会自动开启还原，什么都不用点。
-3. 需要手动时点击**分享右侧**的 **Vatrix**（开启还原时按钮是蓝色），在弹出的面板里操作：
+2. 打开或刷新 `https://www.bilibili.com/video/*` 或 `https://www.youtube.com/watch?v=…` 视频页。
+   带 Vatrix 片头的视频会自动开启还原，什么都不用点。
+3. 需要手动时点击 **Vatrix** 入口（B 站在**分享右侧**，YouTube 在**点赞左侧**；开启还原时变蓝），在弹出的面板里操作：
    - 最上面的**画面还原**开关随时开关还原，下面一行是当前状态；
    - 片头二维码不含 seed 时，在 **seed** 里填写；
    - 没有片头二维码的视频，展开**手动参数**填 tile、margin、原始宽高等，点**应用**。
@@ -20,6 +22,18 @@
 **外观跟随 B 站**：面板用 B 站自己的主题变量（bili-theme 的 `--bg1_float`、`--text1`、`--brand_blue` 等）上色，
 这些变量会继承进脚本的 Shadow DOM，所以 B 站换成深色主题（加载 `dark.css`）时面板一起变深。
 B 站视频页本身不跟随系统深浅色（实测系统设为深色时仍加载 `light.css`），脚本也不单独跟随系统，免得和页面不一致。
+
+**YouTube**（`@match https://www.youtube.com/*`，站内跳转由 `yt-navigate-finish` 和定时检查接上）：
+- 入口是和点赞同高的胶囊按钮，插在 `ytd-menu-renderer` 里 `#top-level-buttons-computed` 之前，即点赞左侧，
+  不放进 YouTube 自己渲染的按钮列表。（`#actions-inner` 是纵向排列的，插在那里会跑到点赞上方。）
+- YouTube 的 `--yt-spec-*` 颜色由它的 CSS shim 在运行时算好，并不是真正的 CSS 变量，继承不进来；
+  所以面板看 `<html>` 上的 `dark` 属性，在按实测取值的浅色 / 深色两套配色间切换。YouTube 默认跟随系统深浅色。
+- YouTube 强制 Trusted Types（`require-trusted-types-for 'script'`），直接给 `innerHTML` 赋字符串会报错；
+  脚本建了一个名为 `vatrix` 的策略来生成面板（CSP 没有限制策略名）。
+- 广告和正片用同一个 `video`：`#movie_player` 带 `ad-showing` 时撤下还原画面，广告结束自动接着还原。
+- 只认主播放器 `#movie_player` 里的视频，首页和侧栏的悬停预览虽然 class 一样也不会被挂上。
+- 暂不支持：Shorts（另一套播放器）、「读取简介」（YouTube 上隐藏）、旧格式音频的下载还原（找音轨的逻辑是按 B 站 DASH 写的）。
+  当前格式的音频实时还原不依赖站点，但尚未在 YouTube 线上听过。
 
 **片头二维码（默认开）**：桌面端加密的视频前 1 秒是一张二维码。脚本在播放头位于前 1.5 秒时每 100 ms 抓一帧解码
 （内置 jsQR，不依赖 `BarcodeDetector`），读到 Vatrix 的数字协议后自动填入宽高、tile、margin、反色
@@ -154,7 +168,8 @@ URL 参数会进入站点请求和浏览器历史；需要保密的 seed 应在�
 ## 实现与边界
 
 - `src/settings.js`：参数校验、tail 别名、带 `vc_` 前缀的 URL 参数及明确简介字段解析。
-- `src/main.js`：分享右侧入口、Shadow DOM 原生 dialog、动态播放器绑定、帧调度和生命周期清理。
+- `src/sites.js`：各站点的播放器、入口位置、主题和广告判断；`siteFor` 按域名选站点（本地测试页按路径）。
+- `src/main.js`：工具栏入口、Shadow DOM 原生 dialog、动态播放器绑定、帧调度和生命周期清理。
 - `src/intro.js`：二维码扫描的媒体事件协调、缓冲等待、手动重试、取消和过期结果隔离；有纯 Node 回归测试。
 - `src/audio.js`：`createRealtimeMirror` 把视频声音接入 AudioWorklet 实时翻转（worklet 源码由 `createMirrorStream` 的源文本生成，
   用 blob 地址加载）；`createAudioRestorer` 定位并下载音轨、还原音轨的播放同步；准备期间保留原声，替代音轨成功播放后才静音原声，解码或播放失败时交还原声（不是已还原的声音）。倒放、频谱翻转、扫频音对齐、找栅格、WAV 编码在 `viewer/vatrix.js`。
@@ -175,7 +190,7 @@ URL 参数会进入站点请求和浏览器历史；需要保密的 seed 应在�
   全屏切换会关闭设置窗口，常规工具栏入口留在视频外；可退出全屏调整参数。
 - WebGL 错误、跨域纹理读取失败或上下文丢失时关闭还原、保留原播放器，不更改站点视频请求。
 - 原生视频画中画、只把 video 元素全屏的模式不包含旁边的 Canvas。
-- 实时音频还原依赖 B 站允许接管视频声音（`createMediaElementSource`）和加载 blob 地址的 AudioWorklet；
+- 实时音频还原依赖站点允许接管视频声音（`createMediaElementSource`）和加载 blob 地址的 AudioWorklet；
   下载还原依赖 B 站音频 `.m4s` 的命名和 CDN 允许页面同源 `fetch`。这些只在本地模拟过，尚未在 B 站线上验证。
 - 仅支持保持整幅网格的转码/缩放；平台裁剪、额外黑边和覆盖式水印可能影响还原。
 - 为限制误输入开销：每个尺寸不超过 16384、画面像素数不超过 7680×4320、方块数不超过 262144、seed 最长 4096 字符；还会检查 GPU 限制。
@@ -223,6 +238,8 @@ node viewer/serve.mjs 8767
 切到别的视频不继承状态，切回来时即使播放头已过片头也直接用记忆参数还原。
 测试会自动检查默认值、延迟挂载、分享右侧位置、模态窗口/关闭操作、简介导入、工具栏重建、像素还原、margin/裁剪、半尺寸视频、暂停、节点替换、rAF、上下文恢复及 SPA 切换。
 页面提供全屏/播放按钮供人工检查。该页面用测试存储代替 GM API，**不等同于真实油猴扩展与 B 站线上验证**。
+`userscript/tests/youtube.html` 按 YouTube 观看页实测的结构（`#movie_player`、`ytd-menu-renderer`）搭建，并用 meta CSP 强制
+Trusted Types：检查入口位置与高度、不挂到悬停预览、深浅色跟随 `html[dark]`、手动参数下的像素还原、广告期间撤下画面和站内跳转。
 本次已在 Chromium 浏览器通过 12 项集成检查；原尺寸/半尺寸测试的 RGB 最大采样误差分别为 1 / 5。
 新增的反色用例使用真实 Rust YUV 反色与 ffmpeg H.264 编码，浏览器还原后的 RGB 最大采样误差为 3。
 节点测试 19 项、Rust workspace 测试 31 项及 Tauri 前端构建通过。合成有限/全范围输入的桌面端往返 RGB 平均绝对误差分别约为 0.720 / 0.916；这些是小型测试图的结果，不代表任意视频画质。

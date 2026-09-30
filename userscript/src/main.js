@@ -1,7 +1,10 @@
 /** Browser integration only. The renderer and desktop defaults are injected by the build. */
-export function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroReader, audio, defaults, validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings, storage, menu, iconUrl, scriptVersion = 'unknown' }) {
-  const SELECTOR = '.bpx-player-primary-area video';
-  const TOOLBAR_SELECTOR = '#arc_toolbar_report .video-toolbar-left-main';
+export function installUserscript({ createRestorer, scanIntro, decodeQr, createIntroReader, audio, defaults, validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings, storage, menu, iconUrl, site, scriptVersion = 'unknown' }) {
+  // YouTube requires Trusted Types for innerHTML; the panel markup is a constant of ours.
+  let policy = null;
+  try { policy = globalThis.trustedTypes?.createPolicy?.('vatrix', { createHTML: (markup) => markup }) ?? null; }
+  catch { /* A page that allows no new policy names; plain strings work wherever that is not enforced. */ }
+  const toHtml = (markup) => (policy ? policy.createHTML(markup) : markup);
   const STORAGE_KEY = 'vatrix.bilibili.settings.v1';
   // Per-video memory, keyed by BVID and part: what the intro QR said, plus
   // whatever the viewer corrected by hand on that page.
@@ -25,9 +28,9 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
   // data-server-rendered from its root as hydration starts, and hydration is
   // synchronous, so the toolbar button waits for that attribute to go. The
   // player's own DOM is not server-rendered: the canvas mounts at once, so the
-  // intro in the first second is still read.
+  // intro in the first second is still read. Other sites have no such marker.
   const hydrationDeadline = Date.now() + 30000;
-  const hydrated = () => !document.querySelector('[data-server-rendered]') || Date.now() > hydrationDeadline;
+  const hydrated = () => !site.ssrMarker || !document.querySelector(site.ssrMarker) || Date.now() > hydrationDeadline;
 
   /** This page's remembered plan, ignored when it no longer validates. */
   function pageMemory() {
@@ -75,7 +78,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
 
   function mount(video, toolbar) {
     const mountedPageKey = pageKey;
-    const area = video.closest('.bpx-player-primary-area');
+    const area = video.closest(site.area);
     const wrapper = video.parentElement;
     const listeners = new AbortController();
     const positioned = [];
@@ -94,12 +97,14 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     wrapper.append(canvas);
     const ui = document.createElement('div');
     ui.id = 'vatrix-userscript-ui';
-    ui.style.cssText = 'display:inline-flex;align-items:center;position:relative;flex-shrink:0;margin-left:16px;pointer-events:auto;';
+    ui.style.cssText = `display:inline-flex;align-items:center;position:relative;flex-shrink:0;pointer-events:auto;${site.hostStyle}`;
+    ui.dataset.site = site.id;
     const shadow = ui.attachShadow({ mode: 'open' });
-    // Bilibili's own theme variables (bili-theme map.css) inherit into the
-    // shadow tree, so the panel follows whichever theme the page has loaded;
-    // the fallbacks are its light values.
-    shadow.innerHTML = `
+    // On Bilibili the page's own theme variables (bili-theme map.css) inherit
+    // into the shadow tree, so the panel follows whichever theme it has loaded;
+    // the fallbacks are its light values. YouTube gets fixed palettes switched
+    // by data-theme, mirrored from the page below.
+    shadow.innerHTML = toHtml(`
       <style>
         :host {
           --vx-blue: var(--brand_blue, #00aeec);
@@ -197,6 +202,28 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
         .btn:hover { border-color: var(--vx-blue); color: var(--vx-blue); }
         .btn.primary { margin-left: auto; border-color: var(--vx-blue); background: var(--vx-blue); color: var(--vx-white); }
         .btn.primary:hover { color: var(--vx-white); filter: brightness(1.08); }
+        /* YouTube: its palettes as measured on the watch page, and a pill like the like button beside it. */
+        :host([data-site=youtube]) {
+          --vx-blue: #065fd4; --vx-blue-thin: #def1ff; --vx-surface: #fff; --vx-well: rgba(0, 0, 0, .05);
+          --vx-hover: rgba(0, 0, 0, .1); --vx-line: rgba(0, 0, 0, .1); --vx-line-light: rgba(0, 0, 0, .1);
+          --vx-text1: #0f0f0f; --vx-text2: #606060; --vx-text3: #909090; --vx-weak: #c6c6c6;
+          --vx-white: #fff; --vx-red: #cc0000; --vx-green: #2ba640;
+        }
+        :host([data-site=youtube][data-theme=dark]) {
+          --vx-blue: #3ea6ff; --vx-blue-thin: #263850; --vx-surface: #282828; --vx-well: rgba(255, 255, 255, .1);
+          --vx-hover: rgba(255, 255, 255, .2); --vx-line: rgba(255, 255, 255, .2); --vx-line-light: rgba(255, 255, 255, .1);
+          --vx-text1: #f1f1f1; --vx-text2: #aaa; --vx-text3: #717171; --vx-weak: #717171;
+          --vx-white: #0f0f0f; --vx-red: #ff4e45; --vx-green: #2ba640;
+        }
+        :host([data-site=youtube]) #open { height: var(--vx-entry-height, 36px); padding: 0 16px 0 12px; border-radius: 9999px;
+          background: var(--vx-well); color: var(--vx-text1); font-size: 14px; font-weight: 500;
+          transition: background-color .2s, color .2s; }
+        :host([data-site=youtube]) #open:hover, :host([data-site=youtube]) #open[aria-expanded=true] { background: var(--vx-hover); color: var(--vx-text1); }
+        :host([data-site=youtube][data-enabled=true]) #open { color: var(--vx-blue); }
+        :host([data-site=youtube]) #open img { width: 20px; height: 20px; }
+        :host([data-site=youtube]) dialog { border: 0; border-radius: 12px; box-shadow: 0 4px 32px rgba(0, 0, 0, .1), 0 0 0 1px var(--vx-line); }
+        :host([data-site=youtube]) .hero { border-radius: 12px; }
+        :host([data-site=youtube]) .btn { border-radius: 9999px; }
       </style>
       <button id="open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="panel">
         <img id="brand-icon" width="22" height="22" alt="" aria-hidden="true" draggable="false">
@@ -236,15 +263,27 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
             </div>
           </div>
         </details>
-      </form></dialog>`;
+      </form></dialog>`);
     shadow.getElementById('build-version').textContent = `v${scriptVersion}`;
     for (const id of ['brand-icon', 'panel-icon']) {
       const icon = shadow.getElementById(id);
       if (iconUrl) icon.src = iconUrl;
       else icon.hidden = true;
     }
-    if (hydrated()) toolbar.after(ui);
+    if (hydrated()) {
+      site.place(toolbar, ui);
+      site.fit(toolbar, ui);
+    }
+    // Where the page themes itself with an attribute rather than inheritable variables, mirror it.
+    let themeObserver = null;
+    if (site.theme) {
+      const syncTheme = () => { ui.dataset.theme = site.theme.read(); };
+      syncTheme();
+      themeObserver = new MutationObserver(syncTheme);
+      themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: [site.theme.attribute] });
+    }
     const form = shadow.querySelector('form');
+    shadow.getElementById('from-description').hidden = !site.description;
     const manual = shadow.getElementById('manual');
     const dialog = shadow.getElementById('panel');
     const status = shadow.getElementById('status');
@@ -255,6 +294,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     let frameHandle = null;
     let frameKind = null;
     let hasDrawn = false;
+    let pausedForAd = false;
     let dead = false;
 
     const on = (target, name, callback, options = {}) => target.addEventListener(name, callback, { ...options, signal: listeners.signal });
@@ -452,6 +492,18 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     }
     function render() {
       if (dead || !enabled || !restorer || document.hidden) return;
+      if (site.suspended()) {
+        // An ad in the same video element: show it as it is and pick up again once it ends.
+        if (!pausedForAd) message('广告播放中，结束后自动继续还原。');
+        pausedForAd = true;
+        canvas.style.visibility = 'hidden';
+        scheduleFrame();
+        return;
+      }
+      if (pausedForAd) {
+        pausedForAd = false;
+        hasDrawn = false;
+      }
       if (video.readyState >= 2 && !video.seeking && video.videoWidth && video.videoHeight) {
         try {
           restorer.draw(video);
@@ -533,10 +585,7 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     });
     on(shadow.getElementById('from-description'), 'click', () => {
       try {
-        const description = document.querySelector('#v_desc');
-        // innerText preserves <br> boundaries between the seed and later prose.
-        const text = description?.innerText ?? description?.textContent ?? '';
-        const imported = validateSettings(descriptionSettings(text), defaults);
+        const imported = validateSettings(descriptionSettings(site.description?.() ?? ''), defaults);
         fill(imported);
         message('已填入简介里的参数，点「应用」或打开还原后生效。');
       } catch (error) { message(error.message, true); }
@@ -620,16 +669,20 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
     return {
       video, wrapper, area, ui, canvas, open,
       place(anchor) {
-        if (anchor.nextElementSibling === ui || !hydrated()) return;
-        const reopen = dialog.open;
-        open(false);
-        anchor.after(ui);
-        if (reopen) open();
+        if (!hydrated()) return;
+        if (!site.placed(anchor, ui)) {
+          const reopen = dialog.open;
+          open(false);
+          site.place(anchor, ui);
+          if (reopen) open();
+        }
+        site.fit(anchor, ui);
       },
       dispose() {
         dead = true;
         open(false);
         listeners.abort();
+        themeObserver?.disconnect();
         audioRestorer?.destroy();
         audioRestorer = null;
         resizeObserver.disconnect();
@@ -659,12 +712,12 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
       enabled = autoEnabled();
     }
     if (!pageKey) return;
-    const toolbar = document.querySelector(TOOLBAR_SELECTOR);
-    const candidates = [...document.querySelectorAll(SELECTOR)].filter((video) => video.getClientRects().length);
+    const toolbar = document.querySelector(site.anchor);
+    const candidates = [...document.querySelectorAll(site.video)].filter((video) => video.getClientRects().length);
     candidates.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight);
     const video = candidates[0] ?? null;
     if (toolbar && active?.video === video && active.wrapper === video?.parentElement &&
-        active.area === video?.closest('.bpx-player-primary-area') && active.canvas.isConnected) {
+        active.area === video?.closest(site.area) && active.canvas.isConnected) {
       active.place(toolbar);
       return;
     }
@@ -676,21 +729,25 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
   }
   const observer = new MutationObserver((records) => {
     if (active && (!active.video.isConnected || !active.ui.isConnected || !active.canvas.isConnected)) queueScan();
+    // Off a video page the timer alone notices navigation; skip scanning every added node.
+    if (!pageKey && !active) return;
     for (const record of records) {
       if (record.type === 'attributes') queueScan(); // hydration: the button may join the toolbar now
       for (const node of record.addedNodes) {
-        const relevant = 'video, .bpx-player-primary-area, #arc_toolbar_report, .video-toolbar-left-main';
-        if (node.nodeType === 1 && (node.matches(relevant) || node.querySelector(relevant))) queueScan();
+        if (node.nodeType === 1 && (node.matches(site.relevant) || node.querySelector(site.relevant))) queueScan();
       }
     }
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-server-rendered'] });
+  observer.observe(document.documentElement, { childList: true, subtree: true,
+    ...(site.ssrMarker ? { attributes: true, attributeFilter: ['data-server-rendered'] } : {}) });
   // URL changes from history.pushState have no native event. Also recover when
   // a preloaded player becomes visible without replacing its video node.
   const timer = setInterval(queueScan, 1000);
   const menuId = menu.register('Vatrix：还原参数', () => { scan(); active?.open(); });
   const lifetime = new AbortController();
   window.addEventListener('pageshow', queueScan, { signal: lifetime.signal });
+  // YouTube announces its in-app navigations; the timer would get there a second later.
+  document.addEventListener('yt-navigate-finish', queueScan, { signal: lifetime.signal });
   window.addEventListener('pagehide', (event) => { if (!event.persisted) dispose(); }, { signal: lifetime.signal });
   function dispose() {
     if (disposed) return;

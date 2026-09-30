@@ -133,5 +133,8 @@ export function forgetPageSettings(pages, key) {
 /** BVID/path and multi-part index identify a video; quality changes do not. */
 export function videoPageKey(href) {
   const url = new URL(href);
-  return url.pathname.startsWith('/video/') ? `${url.pathname}?p=${url.searchParams.get('p') ?? '1'}` : null;
+  if (url.pathname.startsWith('/video/')) return `${url.pathname}?p=${url.searchParams.get('p') ?? '1'}`;
+  // YouTube: the video id alone; playlists, timestamps and the like do not change the video.
+  const id = url.pathname === '/watch' ? url.searchParams.get('v') : null;
+  return id ? `youtube:${id}` : null;
 }

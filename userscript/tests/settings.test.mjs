@@ -49,6 +49,12 @@ test('page identity changes for a new video or part, not a quality setting', () 
   assert.equal(videoPageKey('https://www.bilibili.com/video/BVtest/?qn=80'), '/video/BVtest/?p=1');
   assert.equal(videoPageKey('https://www.bilibili.com/video/BVtest/?p=2'), '/video/BVtest/?p=2');
   assert.equal(videoPageKey('https://www.bilibili.com/'), null);
+  // YouTube: the video id only; playlist position and timestamps are the same video.
+  assert.equal(videoPageKey('https://www.youtube.com/watch?v=abc123XYZ_-'), 'youtube:abc123XYZ_-');
+  assert.equal(videoPageKey('https://www.youtube.com/watch?v=abc123XYZ_-&list=PL1&index=3&t=42s'), 'youtube:abc123XYZ_-');
+  assert.equal(videoPageKey('https://www.youtube.com/'), null);
+  assert.equal(videoPageKey('https://www.youtube.com/watch'), null);
+  assert.equal(videoPageKey('https://www.youtube.com/@someone/videos'), null);
 });
 
 test('explicit description import matches the supplied video parameters', () => {

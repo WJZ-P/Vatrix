@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import { installUserscript } from '../src/main.js';
 import { createIntroReader } from '../src/intro.js';
 import { validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings } from '../src/settings.js';
+import { SITES } from '../src/sites.js';
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const defaults = { width: 720, height: 1280, tile: 40, margin: 0, seed: 'sensitive-seed', invert: false, autoIntro: false, audioMs: 0 };
@@ -90,7 +91,7 @@ function setup(t, { failFirstInit = false, audioFailure = false, audioFactory = 
   });
   let initCount = 0;
   const app = installUserscript({
-    defaults, scriptVersion: 'ui-test',
+    defaults, scriptVersion: 'ui-test', site: SITES.bilibili,
     validateSettings, querySettings, descriptionSettings, videoPageKey, pageSettings, rememberPageSettings, forgetPageSettings,
     storage: { get: (key, fallback) => saved.get(key) ?? fallback, set: (key, value) => saved.set(key, value) },
     menu: { register: () => 1, unregister: () => {} },

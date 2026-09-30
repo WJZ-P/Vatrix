@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<!-- Like the real YouTube: strings can no longer be assigned to innerHTML. -->
+<meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script'">
+<title>Vatrix userscript YouTube smoke test</title>
+<style>
+  body { background: #fff; color: #0f0f0f; font: 14px/1.5 Roboto, Arial, sans-serif; margin: 24px; padding-bottom: 420px; }
+  html[dark] body { background: #0f0f0f; color: #f1f1f1; }
+  h1 { font-size: 20px; }
+  #movie_player { position: relative; width: min(640px, 95vw); height: 360px; background: #000; }
+  .html5-video-container { position: relative; width: 100%; height: 100%; }
+  #movie_player video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; }
+  /* A hover preview elsewhere on the page, bigger than the player, with the same classes. */
+  ytd-video-preview { display: block; width: 800px; height: 450px; margin-top: 12px; }
+  ytd-video-preview video { width: 100%; height: 100%; }
+  ytd-watch-metadata, #above-the-fold, #menu { display: block; }
+  #top-row, #actions { display: flex; }
+  #actions-inner { display: flex; flex-direction: column; }
+  /* As measured on youtube.com: the renderer stretches its children, the button row has a bottom margin. */
+  ytd-menu-renderer { display: flex; }
+  #top-level-buttons-computed { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  #flexible-item-buttons { display: block; }
+  #top-level-buttons-computed button { height: 36px; padding: 0 16px; border: 0; border-radius: 18px; background: rgba(0, 0, 0, .05); font: 500 14px Roboto, Arial, sans-serif; }
+  html[dark] #top-level-buttons-computed button { background: rgba(255, 255, 255, .1); color: #f1f1f1; }
+  [data-result=pass] { color: #15803d; }
+  [data-result=fail] { color: #b91c1c; }
+</style>
+<h1>Vatrix · YouTube 页面结构集成验证</h1>
+<p>本地合成数据，DOM 结构按 YouTube 观看页实测（#movie_player、ytd-menu-renderer），页面强制 Trusted Types，不连接视频平台。</p>
+<div id="fixture"></div>
+<ol id="results"></ol>
+<p id="summary">测试运行中…</p>
+<script>
+  // Only this local test supplies the userscript manager's APIs.
+  const saved = new Map();
+  window.GM_getValue = (key, fallback) => saved.get(key) ?? fallback;
+  window.GM_setValue = (key, value) => saved.set(key, structuredClone(value));
+  window.GM_registerMenuCommand = () => 1;
+  window.GM_unregisterMenuCommand = () => {};
+  history.replaceState({}, '', '/watch?v=vatrix-fixture');
+</script>
+<script src="/userscript/vatrix.user.js"></script>
+<script type="module" src="/userscript/tests/youtube.mjs"></script>
