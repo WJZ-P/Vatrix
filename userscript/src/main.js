@@ -129,6 +129,13 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
         dialog { position: fixed; margin: 0; width: min(340px, calc(100vw - 24px)); max-width: none; padding: 0;
           overflow-y: auto; border: 1px solid var(--vx-line); border-radius: 8px; background: var(--vx-surface);
           color: var(--vx-text1); box-shadow: 0 0 30px rgba(0, 0, 0, .1); overscroll-behavior: contain; }
+        /* A thin rounded thumb inset from the edge, no arrows; Firefox gets the standard thin bar. */
+        dialog::-webkit-scrollbar { width: 10px; }
+        dialog::-webkit-scrollbar-button { display: none; }
+        dialog::-webkit-scrollbar-track { margin: 8px 0; background: transparent; }
+        dialog::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 5px; background: var(--vx-weak) padding-box; }
+        dialog::-webkit-scrollbar-thumb:hover { background-color: var(--vx-text3); }
+        @supports not selector(::-webkit-scrollbar) { dialog { scrollbar-width: thin; scrollbar-color: var(--vx-weak) transparent; } }
         dialog[open] { animation: vx-pop .18s ease-out; }
         @keyframes vx-pop { from { opacity: 0; transform: translateY(-6px); } }
         dialog::backdrop { background: transparent; }
@@ -159,7 +166,8 @@ export function installUserscript({ createRestorer, scanIntro, decodeQr, createI
           background: var(--vx-weak); transition: background-color .2s; }
         :host([data-intro=found]) .intro::before { background: var(--vx-green); }
         :host([data-intro=scanning]) .intro::before { background: var(--vx-blue); animation: vx-blink 1s ease-in-out infinite; }
-        :host([data-intro=missing]) .intro::before, :host([data-intro=error]) .intro::before { background: var(--vx-red); }
+        /* No QR is what an ordinary video looks like, so only a failure is red. */
+        :host([data-intro=error]) .intro::before { background: var(--vx-red); }
         @keyframes vx-blink { 50% { opacity: .3; } }
         #intro-status { flex: 1; min-width: 0; overflow-wrap: anywhere; }
         .link { flex: none; padding: 0; border: 0; background: none; color: var(--vx-blue); font-size: 12px; transition: opacity .2s; }
