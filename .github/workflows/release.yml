@@ -163,13 +163,20 @@ jobs:
           npx tauri build --target ${{ matrix.target }} --bundles dmg --config src-tauri/tauri.release-macos.conf.json
       # Findings go to annotations as well as the log: annotations of a public
       # repository can be read without signing in, the log cannot.
-      - name: Check the app and name the image
+      # Tauri deletes the intermediate .app once the image is made, so check
+      # the app inside the image itself: that is what people download.
+      - name: Check the disk image and name it
         run: |
           set -euo pipefail
           bundle=target/${{ matrix.target }}/release/bundle
-          app="$bundle/macos/Vatrix.app"
           fail() { echo "::error title=$1 (${{ matrix.label }})::$2"; exit 1; }
-          echo "::notice title=bundle (${{ matrix.label }})::$(cd "$bundle" && find . -maxdepth 5 | sort | tr '\n' ' ')"
+          images=("$bundle"/dmg/*.dmg)
+          [ -f "${images[0]}" ] || fail "disk image" "none under $bundle/dmg"
+          mount=$(mktemp -d)
+          hdiutil attach -nobrowse -readonly -mountpoint "$mount" "${images[0]}" > /dev/null
+          trap 'hdiutil detach "$mount" > /dev/null || true' EXIT
+          app="$mount/Vatrix.app"
+          echo "::notice title=image (${{ matrix.label }})::$(cd "$mount" && find . -maxdepth 4 | sort | tr '\n' ' ')"
           for tool in ffmpeg ffprobe; do
             archs=$(lipo -archs "$app/Contents/MacOS/$tool" 2>&1) || true
             [ "$archs" = "${{ matrix.arch }}" ] || fail "sidecar $tool" "expected ${{ matrix.arch }}, got: $archs"
@@ -178,8 +185,6 @@ jobs:
             || fail "licences" "no FFmpeg notice under Resources: $(find "$app/Contents/Resources" | tr '\n' ' ')"
           signature=$(codesign -dv "$app" 2>&1 | tr '\n' ' ') || true
           echo "::notice title=signature (${{ matrix.label }})::$signature"
-          images=("$bundle"/dmg/*.dmg)
-          [ -f "${images[0]}" ] || fail "disk image" "none under $bundle/dmg"
           mkdir -p release
           cp "${images[0]}" "release/Vatrix-${TAG#v}-macos-${{ matrix.label }}.dmg"
           ls -l release
