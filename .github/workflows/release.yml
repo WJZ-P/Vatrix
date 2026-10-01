@@ -28,10 +28,10 @@ jobs:
   userscript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ env.TAG }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Every version matches the tag
@@ -57,10 +57,10 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ env.TAG }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -112,10 +112,10 @@ jobs:
             label: x64
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ env.TAG }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -131,6 +131,8 @@ jobs:
       - name: FFmpeg (static build from ffmpeg.martin-riedl.de, SHA256 checked)
         run: |
           set -euo pipefail
+          # The mirror is sometimes slow to answer a runner; retry instead of failing the release.
+          fetch() { curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 --connect-timeout 30 --max-time 900 "$@"; }
           mkdir -p app/src-tauri/binaries app/src-tauri/licenses
           notice=app/src-tauri/licenses/FFmpeg-NOTICE.txt
           {
@@ -140,10 +142,10 @@ jobs:
             echo
           } > "$notice"
           for tool in ffmpeg ffprobe; do
-            url=$(curl -fsSL -r 0-0 -o /dev/null -w '%{url_effective}' \
+            url=$(fetch -r 0-0 -o /dev/null -w '%{url_effective}' \
               "https://ffmpeg.martin-riedl.de/redirect/latest/macos/${{ matrix.ffmpeg }}/release/$tool.zip")
-            curl -fsSL -o "$tool.zip" "$url"
-            sum=$(curl -fsSL "$url.sha256" | awk '{print $1}')
+            fetch -o "$tool.zip" "$url"
+            sum=$(fetch "$url.sha256" | awk '{print $1}')
             echo "$sum  $tool.zip" | shasum -a 256 -c -
             unzip -o -q "$tool.zip" -d "unpacked-$tool"
             # Tauri wants sidecars named after the target triple; the bundle drops the suffix.
@@ -151,7 +153,7 @@ jobs:
             [ "$(lipo -archs "app/src-tauri/binaries/$tool-${{ matrix.target }}")" = "${{ matrix.arch }}" ]
             echo "$tool: $url (sha256 $sum)" >> "$notice"
           done
-          curl -fsSL -o app/src-tauri/licenses/FFmpeg-LICENSE.txt https://www.gnu.org/licenses/gpl-3.0.txt
+          fetch -o app/src-tauri/licenses/FFmpeg-LICENSE.txt https://www.gnu.org/licenses/gpl-3.0.txt
           if [ "${{ matrix.arch }}" = "arm64" ]; then app/src-tauri/binaries/ffmpeg-${{ matrix.target }} -version | head -1; fi
           cat "$notice"
       - name: Build the disk image
@@ -159,18 +161,27 @@ jobs:
         run: |
           npm ci
           npx tauri build --target ${{ matrix.target }} --bundles dmg --config src-tauri/tauri.release-macos.conf.json
+      # Findings go to annotations as well as the log: annotations of a public
+      # repository can be read without signing in, the log cannot.
       - name: Check the app and name the image
         run: |
           set -euo pipefail
           bundle=target/${{ matrix.target }}/release/bundle
-          ls -l "$bundle/macos/Vatrix.app/Contents/MacOS"
+          app="$bundle/macos/Vatrix.app"
+          fail() { echo "::error title=$1 (${{ matrix.label }})::$2"; exit 1; }
+          echo "::notice title=bundle (${{ matrix.label }})::$(cd "$bundle" && find . -maxdepth 5 | sort | tr '\n' ' ')"
           for tool in ffmpeg ffprobe; do
-            [ "$(lipo -archs "$bundle/macos/Vatrix.app/Contents/MacOS/$tool")" = "${{ matrix.arch }}" ]
+            archs=$(lipo -archs "$app/Contents/MacOS/$tool" 2>&1) || true
+            [ "$archs" = "${{ matrix.arch }}" ] || fail "sidecar $tool" "expected ${{ matrix.arch }}, got: $archs"
           done
-          ls -R "$bundle/macos/Vatrix.app/Contents/Resources" | grep -i ffmpeg
-          codesign -dv "$bundle/macos/Vatrix.app" 2>&1 | head -5
+          [ -n "$(find "$app/Contents/Resources" -iname '*ffmpeg*' -type f)" ] \
+            || fail "licences" "no FFmpeg notice under Resources: $(find "$app/Contents/Resources" | tr '\n' ' ')"
+          signature=$(codesign -dv "$app" 2>&1 | tr '\n' ' ') || true
+          echo "::notice title=signature (${{ matrix.label }})::$signature"
+          images=("$bundle"/dmg/*.dmg)
+          [ -f "${images[0]}" ] || fail "disk image" "none under $bundle/dmg"
           mkdir -p release
-          cp "$bundle"/dmg/*.dmg "release/Vatrix-${TAG#v}-macos-${{ matrix.label }}.dmg"
+          cp "${images[0]}" "release/Vatrix-${TAG#v}-macos-${{ matrix.label }}.dmg"
           ls -l release
       - uses: actions/upload-artifact@v4
         with:
@@ -182,7 +193,7 @@ jobs:
     needs: [userscript, windows, macos]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ env.TAG }}
       - uses: actions/download-artifact@v4
