@@ -154,10 +154,30 @@ jobs:
           set -Eeuo pipefail
           root=$PWD/ffmpeg-build
           prefix=$root/out
-          # A failed configure explains itself in config.log; put its end in an annotation.
-          trap 'echo "::error title=FFmpeg build (${{ matrix.label }})::line $LINENO: $BASH_COMMAND -- $(tail -n 12 "$root/ffmpeg/ffbuild/config.log" "$root/x264/config.log" 2>/dev/null | tr "\n" " " | tail -c 1800)"' ERR
           mkdir -p "$root"
           cd "$root"
+          # Annotation text must escape %, CR and LF, or GitHub drops the annotation.
+          annotate() {
+            local text=$2
+            text=${text//'%'/'%25'}
+            text=${text//$'\r'/'%0D'}
+            text=${text//$'\n'/'%0A'}
+            echo "::error title=$1 (${{ matrix.label }})::$text"
+          }
+          # Each stage logs to a file; a failing stage puts the end of it, and of
+          # the configure log when there is one, in an annotation.
+          stage() {
+            local name=$1 dir=$2
+            shift 2
+            if ! (cd "$dir" && "$@") > "$root/$name.log" 2>&1; then
+              annotate "$name" "$(tail -n 40 "$root/$name.log")"
+              for log in "$root/x264/config.log" "$root/ffmpeg/ffbuild/config.log"; do
+                if [ -f "$log" ]; then annotate "$name: ${log#$root/}" "$(tail -n 25 "$log")"; fi
+              done
+              exit 1
+            fi
+          }
+          trap 'annotate "FFmpeg build" "line $LINENO: $BASH_COMMAND"' ERR
           command -v pkg-config > /dev/null || brew install pkgconf
           # x86 assembly for both x264 and FFmpeg.
           if [ "$ARCH" = x86_64 ]; then brew install nasm; fi
@@ -167,32 +187,34 @@ jobs:
             git init -q "$2"
             git -C "$2" fetch -q --depth 1 "$1" "$3"
             git -C "$2" -c advice.detachedHead=false checkout -q FETCH_HEAD
-            [ "$(git -C "$2" rev-parse HEAD)" = "$3" ] || { echo "::error::$1 is not at $3"; exit 1; }
+            [ "$(git -C "$2" rev-parse HEAD)" = "$3" ] || { annotate "fetch" "$1 is not at $3"; exit 1; }
           }
           fetch_commit https://github.com/mirror/x264.git x264 "$X264_COMMIT"
           fetch_commit https://github.com/FFmpeg/FFmpeg.git ffmpeg "$FFMPEG_COMMIT"
-          (
-            cd x264
-            CC=clang ./configure --prefix="$prefix" --host="$HOST" --enable-static --enable-pic \
-              --disable-cli --disable-opencl --extra-cflags="$flags" --extra-ldflags="$flags"
-            make -j"$jobs"
-            make install
-          )
+          # Only a cross build names a host; a native one lets each configure look for itself.
+          # The arrays may be empty: macOS's bash 3.2 calls "${a[@]}" of an empty array unbound
+          # under set -u, and exits without running the ERR trap; hence ${a[@]+"${a[@]}"}.
+          host=()
           cross=()
-          if [ "$ARCH" != "$(uname -m)" ]; then cross=(--enable-cross-compile); fi
-          (
-            cd ffmpeg
-            PKG_CONFIG_PATH="$prefix/lib/pkgconfig" ./configure --prefix="$prefix" \
-              --arch="$ARCH" --target-os=darwin "${cross[@]}" --cc=clang \
-              --extra-cflags="$flags" --extra-ldflags="$flags" --pkg-config-flags=--static \
-              --enable-gpl --enable-version3 --enable-libx264 \
-              --disable-autodetect --enable-videotoolbox --enable-zlib --enable-bzlib \
-              --enable-static --disable-shared --disable-ffplay --disable-doc --disable-debug
-            make -j"$jobs"
-            make install
-            cp COPYING.GPLv3 "$prefix/COPYING.GPLv3"
-            sed -n 's/^#define FFMPEG_CONFIGURATION "\(.*\)"$/\1/p' config.h > "$prefix/CONFIGURATION.txt"
-          )
+          if [ "$ARCH" != "$(uname -m)" ]; then
+            host=(--host="$HOST")
+            cross=(--enable-cross-compile)
+          fi
+          stage x264-configure x264 env CC=clang ./configure --prefix="$prefix" ${host[@]+"${host[@]}"} \
+            --enable-static --enable-pic --disable-cli --disable-opencl \
+            --extra-cflags="$flags" --extra-ldflags="$flags"
+          stage x264-make x264 make -j"$jobs"
+          stage x264-install x264 make install
+          stage ffmpeg-configure ffmpeg env PKG_CONFIG_PATH="$prefix/lib/pkgconfig" ./configure --prefix="$prefix" \
+            --arch="$ARCH" --target-os=darwin ${cross[@]+"${cross[@]}"} --cc=clang \
+            --extra-cflags="$flags" --extra-ldflags="$flags" --pkg-config-flags=--static \
+            --enable-gpl --enable-version3 --enable-libx264 \
+            --disable-autodetect --enable-videotoolbox --enable-zlib --enable-bzlib \
+            --enable-static --disable-shared --disable-ffplay --disable-doc --disable-debug
+          stage ffmpeg-make ffmpeg make -j"$jobs"
+          stage ffmpeg-install ffmpeg make install
+          cp ffmpeg/COPYING.GPLv3 "$prefix/COPYING.GPLv3"
+          sed -n 's/^#define FFMPEG_CONFIGURATION "\(.*\)"$/\1/p' ffmpeg/config.h > "$prefix/CONFIGURATION.txt"
       - name: Stage FFmpeg as sidecars
         run: |
           set -euo pipefail
