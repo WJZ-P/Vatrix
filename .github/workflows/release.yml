@@ -203,7 +203,8 @@ jobs:
           ref: ${{ env.TAG }}
       - uses: actions/download-artifact@v4
         with:
-          path: assets
+          # Not "assets": the repository has a directory of that name.
+          path: release-assets
           merge-multiple: true
       - name: Publish the release
         env:
@@ -213,25 +214,25 @@ jobs:
           set -Eeuo pipefail
           # Whatever fails says where, in an annotation (readable without signing in).
           trap 'echo "::error title=publish failed::line $LINENO, exit $?: $BASH_COMMAND"' ERR
-          echo "::notice title=assets::$(ls -la assets | tr '\n' ' ')"
+          echo "::notice title=assets::$(ls -la release-assets | tr '\n' ' ')"
           # gh's complaints go to an annotation too.
           run() {
             local out
             out=$("$@" 2>&1) || { echo "::error title=${*:1:3}::$(printf '%s' "$out" | tail -c 2000 | tr '\n' ' ')"; exit 1; }
             printf '%s\n' "$out"
           }
-          ls -l assets
-          (cd assets && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          # A fresh directory holding only the downloaded files.
+          (cd release-assets && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt)
           notes=".github/release-notes/$TAG.md"
           if gh release view "$TAG" > /dev/null 2>&1; then
-            run gh release upload "$TAG" assets/* --clobber
+            run gh release upload "$TAG" release-assets/* --clobber
             # A failed earlier run may have left the release as a draft.
             if [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true ]; then
               run gh release edit "$TAG" --draft=false
             fi
           elif [ -f "$notes" ]; then
-            run gh release create "$TAG" assets/* --verify-tag --title "Vatrix $TAG" --notes-file "$notes"
+            run gh release create "$TAG" release-assets/* --verify-tag --title "Vatrix $TAG" --notes-file "$notes"
           else
-            run gh release create "$TAG" assets/* --verify-tag --title "Vatrix $TAG" --generate-notes
+            run gh release create "$TAG" release-assets/* --verify-tag --title "Vatrix $TAG" --generate-notes
           fi
           echo "::notice title=published::$(gh release view "$TAG" --json url,assets --jq '.url + " " + ([.assets[].name] | join(", "))')"
