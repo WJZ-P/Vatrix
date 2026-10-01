@@ -103,14 +103,20 @@ jobs:
       matrix:
         include:
           - target: aarch64-apple-darwin
-            ffmpeg: arm64
             arch: arm64
             label: arm64
+            macos-min: '11.0'
           - target: x86_64-apple-darwin
-            ffmpeg: amd64
             arch: x86_64
             label: x64
+            macos-min: '10.15'
     runs-on: macos-latest
+    env:
+      # FFmpeg n9.0.2 and x264's stable branch, pinned by commit and checked after fetching.
+      FFMPEG_TAG: n9.0.2
+      FFMPEG_COMMIT: 946fcce07b6dcd0331c8cc609192aeff5e1924f8
+      X264_COMMIT: 31e19f92f00c7003fa115047ce50978bc98c3a0d
+      MACOS_MIN: ${{ matrix.macos-min }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -126,36 +132,102 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
+      - name: FFmpeg build cache
+        id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: ffmpeg-build/out
+          key: ffmpeg-${{ matrix.target }}-${{ env.FFMPEG_COMMIT }}-${{ env.X264_COMMIT }}-${{ env.MACOS_MIN }}-v1
       # Homebrew's ffmpeg links against dylibs under /opt/homebrew and cannot
-      # ship inside an app; these are self-contained static builds.
-      - name: FFmpeg (static build from ffmpeg.martin-riedl.de, SHA256 checked)
+      # ship inside an app. Ready-made static builds were either unreliable to
+      # fetch from the runners or configured with --enable-nonfree, which may
+      # not be redistributed. So build one here from pinned GitHub sources:
+      # static, GPL v3 with libx264, linked against nothing but macOS itself.
+      - name: Build FFmpeg with x264
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        env:
+          ARCH: ${{ matrix.arch }}
+          HOST: ${{ matrix.target }}
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+          HOMEBREW_NO_INSTALL_CLEANUP: '1'
+        run: |
+          set -Eeuo pipefail
+          root=$PWD/ffmpeg-build
+          prefix=$root/out
+          # A failed configure explains itself in config.log; put its end in an annotation.
+          trap 'echo "::error title=FFmpeg build (${{ matrix.label }})::line $LINENO: $BASH_COMMAND -- $(tail -n 12 "$root/ffmpeg/ffbuild/config.log" "$root/x264/config.log" 2>/dev/null | tr "\n" " " | tail -c 1800)"' ERR
+          mkdir -p "$root"
+          cd "$root"
+          command -v pkg-config > /dev/null || brew install pkgconf
+          # x86 assembly for both x264 and FFmpeg.
+          if [ "$ARCH" = x86_64 ]; then brew install nasm; fi
+          jobs=$(sysctl -n hw.ncpu)
+          flags="-arch $ARCH -mmacosx-version-min=$MACOS_MIN"
+          fetch_commit() {
+            git init -q "$2"
+            git -C "$2" fetch -q --depth 1 "$1" "$3"
+            git -C "$2" -c advice.detachedHead=false checkout -q FETCH_HEAD
+            [ "$(git -C "$2" rev-parse HEAD)" = "$3" ] || { echo "::error::$1 is not at $3"; exit 1; }
+          }
+          fetch_commit https://github.com/mirror/x264.git x264 "$X264_COMMIT"
+          fetch_commit https://github.com/FFmpeg/FFmpeg.git ffmpeg "$FFMPEG_COMMIT"
+          (
+            cd x264
+            CC=clang ./configure --prefix="$prefix" --host="$HOST" --enable-static --enable-pic \
+              --disable-cli --disable-opencl --extra-cflags="$flags" --extra-ldflags="$flags"
+            make -j"$jobs"
+            make install
+          )
+          cross=()
+          if [ "$ARCH" != "$(uname -m)" ]; then cross=(--enable-cross-compile); fi
+          (
+            cd ffmpeg
+            PKG_CONFIG_PATH="$prefix/lib/pkgconfig" ./configure --prefix="$prefix" \
+              --arch="$ARCH" --target-os=darwin "${cross[@]}" --cc=clang \
+              --extra-cflags="$flags" --extra-ldflags="$flags" --pkg-config-flags=--static \
+              --enable-gpl --enable-version3 --enable-libx264 \
+              --disable-autodetect --enable-videotoolbox --enable-zlib --enable-bzlib \
+              --enable-static --disable-shared --disable-ffplay --disable-doc --disable-debug
+            make -j"$jobs"
+            make install
+            cp COPYING.GPLv3 "$prefix/COPYING.GPLv3"
+            sed -n 's/^#define FFMPEG_CONFIGURATION "\(.*\)"$/\1/p' config.h > "$prefix/CONFIGURATION.txt"
+          )
+      - name: Stage FFmpeg as sidecars
         run: |
           set -euo pipefail
-          # The mirror is sometimes slow to answer a runner; retry instead of failing the release.
-          fetch() { curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 --connect-timeout 30 --max-time 900 "$@"; }
+          prefix=ffmpeg-build/out
+          fail() { echo "::error title=$1 (${{ matrix.label }})::$2"; exit 1; }
           mkdir -p app/src-tauri/binaries app/src-tauri/licenses
-          notice=app/src-tauri/licenses/FFmpeg-NOTICE.txt
-          {
-            echo "Vatrix runs ffmpeg and ffprobe as separate processes. They are unmodified static builds"
-            echo "of FFmpeg by https://ffmpeg.martin-riedl.de, licensed under the GNU GPL version 3"
-            echo "(see FFmpeg-LICENSE.txt). FFmpeg source code: https://ffmpeg.org/download.html"
-            echo
-          } > "$notice"
           for tool in ffmpeg ffprobe; do
-            url=$(fetch -r 0-0 -o /dev/null -w '%{url_effective}' \
-              "https://ffmpeg.martin-riedl.de/redirect/latest/macos/${{ matrix.ffmpeg }}/release/$tool.zip")
-            fetch -o "$tool.zip" "$url"
-            sum=$(fetch "$url.sha256" | awk '{print $1}')
-            echo "$sum  $tool.zip" | shasum -a 256 -c -
-            unzip -o -q "$tool.zip" -d "unpacked-$tool"
             # Tauri wants sidecars named after the target triple; the bundle drops the suffix.
-            install -m 755 "unpacked-$tool/$tool" "app/src-tauri/binaries/$tool-${{ matrix.target }}"
-            [ "$(lipo -archs "app/src-tauri/binaries/$tool-${{ matrix.target }}")" = "${{ matrix.arch }}" ]
-            echo "$tool: $url (sha256 $sum)" >> "$notice"
+            bin="app/src-tauri/binaries/$tool-${{ matrix.target }}"
+            install -m 755 "$prefix/bin/$tool" "$bin"
+            archs=$(lipo -archs "$bin")
+            [ "$archs" = "${{ matrix.arch }}" ] || fail "$tool" "built for $archs"
+            # Nothing outside macOS itself, so the app runs on any Mac.
+            outside=$(otool -L "$bin" | tail -n +2 | awk '{print $1}' | grep -v -E '^(/usr/lib/|/System/Library/)' || true)
+            [ -z "$outside" ] || fail "$tool links outside macOS" "$(echo $outside)"
           done
-          fetch -o app/src-tauri/licenses/FFmpeg-LICENSE.txt https://www.gnu.org/licenses/gpl-3.0.txt
-          if [ "${{ matrix.arch }}" = "arm64" ]; then app/src-tauri/binaries/ffmpeg-${{ matrix.target }} -version | head -1; fi
-          cat "$notice"
+          echo "::notice title=ffmpeg links (${{ matrix.label }})::$(otool -L "app/src-tauri/binaries/ffmpeg-${{ matrix.target }}" | tail -n +2 | awk '{print $1}' | tr '\n' ' ')"
+          if [ "${{ matrix.arch }}" = "$(uname -m)" ]; then
+            encoders=$(app/src-tauri/binaries/ffmpeg-${{ matrix.target }} -hide_banner -encoders)
+            for name in libx264 h264_videotoolbox aac flac png; do
+              grep -q " $name " <<< "$encoders" || fail "encoder" "$name missing"
+            done
+          fi
+          cp "$prefix/COPYING.GPLv3" app/src-tauri/licenses/FFmpeg-LICENSE.txt
+          {
+            echo "Vatrix runs ffmpeg and ffprobe as separate processes. They were built for this release from"
+            echo "unmodified sources and are licensed under the GNU GPL version 3 (see FFmpeg-LICENSE.txt):"
+            echo
+            echo "FFmpeg $FFMPEG_TAG: https://github.com/FFmpeg/FFmpeg/tree/$FFMPEG_COMMIT"
+            echo "x264: https://github.com/mirror/x264/tree/$X264_COMMIT"
+            echo
+            echo "FFmpeg configuration: $(cat "$prefix/CONFIGURATION.txt")"
+            echo "Build steps: .github/workflows/release.yml in https://github.com/WJZ-P/Vatrix at tag $TAG"
+          } > app/src-tauri/licenses/FFmpeg-NOTICE.txt
+          cat app/src-tauri/licenses/FFmpeg-NOTICE.txt
       - name: Build the disk image
         working-directory: app
         run: |
