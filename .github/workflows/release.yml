@@ -210,8 +210,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          set -euo pipefail
-          # gh's complaints go to an annotation too, readable without signing in.
+          set -Eeuo pipefail
+          # Whatever fails says where, in an annotation (readable without signing in).
+          trap 'echo "::error title=publish failed::line $LINENO, exit $?: $BASH_COMMAND"' ERR
+          echo "::notice title=assets::$(ls -la assets | tr '\n' ' ')"
+          # gh's complaints go to an annotation too.
           run() {
             local out
             out=$("$@" 2>&1) || { echo "::error title=${*:1:3}::$(printf '%s' "$out" | tail -c 2000 | tr '\n' ' ')"; exit 1; }
