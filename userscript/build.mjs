@@ -16,6 +16,10 @@ const metadata = `// ==UserScript==
 // @namespace    vatrix.local
 // @version      ${version}
 // @description  在 B 站和 YouTube 的播放器上还原 Vatrix 加密的视频：读片头二维码，叠加还原画面和声音
+// @homepageURL  https://github.com/WJZ-P/Vatrix
+// @supportURL   https://github.com/WJZ-P/Vatrix/issues
+// @updateURL    https://github.com/WJZ-P/Vatrix/releases/latest/download/vatrix.user.js
+// @downloadURL  https://github.com/WJZ-P/Vatrix/releases/latest/download/vatrix.user.js
 // @icon         data:image/png;base64,${icon32.toString('base64')}
 // @icon64       ${iconUrl}
 // @match        https://www.bilibili.com/video/*

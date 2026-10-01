@@ -9,7 +9,19 @@
 
 这是可逆的扰乱，不是加密：知道参数的人都能还原。平台会重新编码和缩放上传的视频，整套设计围绕"转码之后仍能还原到可看"展开。
 
-## 快速开始
+## 下载
+
+到 [Releases](https://github.com/WJZ-P/Vatrix/releases/latest) 下载：
+
+- `vatrix.user.js`：油猴脚本，装好 Tampermonkey 后点开即可安装，之后自动更新；
+- `Vatrix-<版本>-windows-x64.zip`：Windows 免安装版，解压后双击 `Vatrix.exe`；
+- `Vatrix-<版本>-macos-arm64.dmg` / `-macos-x64.dmg`：macOS（Apple Silicon / Intel）。
+
+这些都由 GitHub Actions 构建：推送 `v*` tag 后 [release.yml](.github/workflows/release.yml) 打包并发布，
+发布说明取自 `.github/release-notes/<tag>.md`。各处版本号（两个 Cargo.toml、`app/package.json`、`tauri.conf.json`、
+`userscript/package.json`）必须和 tag 一致，否则流水线第一步就会失败。
+
+## 从源码运行
 
 ```text
 scripts/fetch-ffmpeg.ps1              # 下载 ffmpeg 到 tools/ffmpeg（桌面端以子进程调用）

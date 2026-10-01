@@ -1,2 +1,6 @@
 /target/
 /tools/ffmpeg/
+
+# Release builds only: ffmpeg sidecars and their notices, fetched by .github/workflows/release.yml.
+/app/src-tauri/binaries/
+/app/src-tauri/licenses/

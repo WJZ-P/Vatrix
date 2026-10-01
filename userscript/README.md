@@ -7,8 +7,9 @@
 
 ## 安装与使用
 
-1. 首次安装：在油猴管理器中新建脚本，把 `userscript/vatrix.user.js` 的**完整内容**粘贴进去并保存。
-   从旧版升级：在原脚本编辑页全文替换、保存，再刷新视频页；不要同时启用两份副本。
+1. 首次安装：装好 Tampermonkey 后，打开 [Releases](https://github.com/WJZ-P/Vatrix/releases/latest) 里的 `vatrix.user.js`，
+   油猴会弹出安装页。脚本带 `@updateURL`，之后发布新版会自动更新。
+   也可以在油猴管理器中新建脚本，把 `userscript/vatrix.user.js` 的**完整内容**粘贴进去并保存；不要同时启用两份副本。
    0.3.7 起脚本名改为 **Vatrix**：油猴按名称识别脚本，装新版后要手动删掉旧的「Vatrix Bilibili Restorer」。
 2. 打开或刷新 `https://www.bilibili.com/video/*` 或 `https://www.youtube.com/watch?v=…` 视频页。
    带 Vatrix 片头的视频会自动开启还原，什么都不用点。

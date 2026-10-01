@@ -4120,7 +4120,7 @@ dependencies = [
 
 [[package]]
 name = "vatrix-app"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "qrcode",
  "rqrr",
@@ -4135,7 +4135,7 @@ dependencies = [
 
 [[package]]
 name = "vatrix-core"
-version = "0.1.0"
+version = "1.0.0"
 
 [[package]]
 name = "version-compare"

@@ -1,6 +1,6 @@
 [package]
 name = "vatrix-app"
-version = "0.1.0"
+version = "1.0.0"
 description = "Vatrix desktop app: scrambles videos for upload"
 edition = "2024"
 publish = false

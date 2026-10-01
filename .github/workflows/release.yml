@@ -1,0 +1,206 @@
+# Builds every release asset on GitHub's runners and publishes them on the
+# tag's release page: the userscript, a portable Windows zip (no installer)
+# and macOS disk images for Apple Silicon and Intel.
+#
+# Push a tag such as v1.0.0 to run it, or start it by hand for an existing
+# tag. Re-running replaces the assets of an existing release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: An existing tag to build, e.g. v1.0.0
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+
+env:
+  TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+
+jobs:
+  userscript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Every version matches the tag
+        run: |
+          set -euo pipefail
+          want="${TAG#v}"
+          check() { [ "$2" = "$want" ] || { echo "::error::$1 is $2, the tag says $want"; exit 1; }; }
+          check userscript/package.json "$(node -p "require('./userscript/package.json').version")"
+          check app/package.json "$(node -p "require('./app/package.json').version")"
+          check tauri.conf.json "$(node -p "require('./app/src-tauri/tauri.conf.json').version")"
+          check app/src-tauri/Cargo.toml "$(sed -n 's/^version = "\(.*\)"/\1/p' app/src-tauri/Cargo.toml | head -1)"
+      - name: Test, and check the committed bundle matches its sources
+        working-directory: userscript
+        run: |
+          npm test
+          node build.mjs --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: userscript
+          path: userscript/vatrix.user.js
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: FFmpeg (gyan.dev essentials build, SHA256 checked)
+        shell: pwsh
+        run: ./scripts/fetch-ffmpeg.ps1
+      - name: Build the executable, no installer
+        working-directory: app
+        run: |
+          npm ci
+          npx tauri build --no-bundle
+      - name: Portable zip
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $name = "Vatrix-$($env:TAG.TrimStart('v'))-windows-x64"
+          $dir = "release/$name"
+          New-Item -ItemType Directory -Force "$dir/licenses" | Out-Null
+          Copy-Item target/release/vatrix-app.exe "$dir/Vatrix.exe"
+          # Found next to the executable at run time (Tools::locate).
+          Copy-Item tools/ffmpeg/ffmpeg.exe, tools/ffmpeg/ffprobe.exe $dir
+          Copy-Item tools/ffmpeg/LICENSE "$dir/licenses/FFmpeg-LICENSE.txt"
+          Copy-Item tools/ffmpeg/README.txt "$dir/licenses/FFmpeg-README.txt"
+          Copy-Item tools/ffmpeg/VERSION.txt "$dir/licenses/FFmpeg-VERSION.txt"
+          Copy-Item packaging/windows/README.txt "$dir/README.txt"
+          Compress-Archive -Path $dir -DestinationPath "release/$name.zip" -CompressionLevel Optimal
+          Get-ChildItem release/*.zip | Format-Table Name, Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: release/*.zip
+          if-no-files-found: error
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            ffmpeg: arm64
+            arch: arm64
+            label: arm64
+          - target: x86_64-apple-darwin
+            ffmpeg: amd64
+            arch: x86_64
+            label: x64
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      # Homebrew's ffmpeg links against dylibs under /opt/homebrew and cannot
+      # ship inside an app; these are self-contained static builds.
+      - name: FFmpeg (static build from ffmpeg.martin-riedl.de, SHA256 checked)
+        run: |
+          set -euo pipefail
+          mkdir -p app/src-tauri/binaries app/src-tauri/licenses
+          notice=app/src-tauri/licenses/FFmpeg-NOTICE.txt
+          {
+            echo "Vatrix runs ffmpeg and ffprobe as separate processes. They are unmodified static builds"
+            echo "of FFmpeg by https://ffmpeg.martin-riedl.de, licensed under the GNU GPL version 3"
+            echo "(see FFmpeg-LICENSE.txt). FFmpeg source code: https://ffmpeg.org/download.html"
+            echo
+          } > "$notice"
+          for tool in ffmpeg ffprobe; do
+            url=$(curl -fsSL -r 0-0 -o /dev/null -w '%{url_effective}' \
+              "https://ffmpeg.martin-riedl.de/redirect/latest/macos/${{ matrix.ffmpeg }}/release/$tool.zip")
+            curl -fsSL -o "$tool.zip" "$url"
+            sum=$(curl -fsSL "$url.sha256" | awk '{print $1}')
+            echo "$sum  $tool.zip" | shasum -a 256 -c -
+            unzip -o -q "$tool.zip" -d "unpacked-$tool"
+            # Tauri wants sidecars named after the target triple; the bundle drops the suffix.
+            install -m 755 "unpacked-$tool/$tool" "app/src-tauri/binaries/$tool-${{ matrix.target }}"
+            [ "$(lipo -archs "app/src-tauri/binaries/$tool-${{ matrix.target }}")" = "${{ matrix.arch }}" ]
+            echo "$tool: $url (sha256 $sum)" >> "$notice"
+          done
+          curl -fsSL -o app/src-tauri/licenses/FFmpeg-LICENSE.txt https://www.gnu.org/licenses/gpl-3.0.txt
+          if [ "${{ matrix.arch }}" = "arm64" ]; then app/src-tauri/binaries/ffmpeg-${{ matrix.target }} -version | head -1; fi
+          cat "$notice"
+      - name: Build the disk image
+        working-directory: app
+        run: |
+          npm ci
+          npx tauri build --target ${{ matrix.target }} --bundles dmg --config src-tauri/tauri.release-macos.conf.json
+      - name: Check the app and name the image
+        run: |
+          set -euo pipefail
+          bundle=target/${{ matrix.target }}/release/bundle
+          ls -l "$bundle/macos/Vatrix.app/Contents/MacOS"
+          for tool in ffmpeg ffprobe; do
+            [ "$(lipo -archs "$bundle/macos/Vatrix.app/Contents/MacOS/$tool")" = "${{ matrix.arch }}" ]
+          done
+          ls -R "$bundle/macos/Vatrix.app/Contents/Resources" | grep -i ffmpeg
+          codesign -dv "$bundle/macos/Vatrix.app" 2>&1 | head -5
+          mkdir -p release
+          cp "$bundle"/dmg/*.dmg "release/Vatrix-${TAG#v}-macos-${{ matrix.label }}.dmg"
+          ls -l release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.label }}
+          path: release/*.dmg
+          if-no-files-found: error
+
+  publish:
+    needs: [userscript, windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          (cd assets && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          notes=".github/release-notes/$TAG.md"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" assets/* --clobber
+          elif [ -f "$notes" ]; then
+            gh release create "$TAG" assets/* --verify-tag --title "Vatrix $TAG" --notes-file "$notes"
+          else
+            gh release create "$TAG" assets/* --verify-tag --title "Vatrix $TAG" --generate-notes
+          fi
