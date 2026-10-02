@@ -1,42 +1,164 @@
 # Vatrix（混映）
 
-把视频画面切成小方块打乱后再上传到视频网站，装了浏览器脚本的观众能实时看到原画面，其他人只看到一片方块。
-声音也可以一起扰乱，片头一秒的二维码记录还原所需的参数，所以观众不用手动填写。
+<!-- PROJECT SHIELDS -->
 
-- **桌面端**（`app/`，Tauri）：拖入视频 → 打乱画面（可选反色、声音频谱翻转）→ 加上片头二维码 → 输出可直接上传的 mp4。
-- **浏览器脚本**（`userscript/vatrix.user.js`，油猴）：在 B 站和 YouTube 播放页读取片头二维码，用 WebGL2 还原画面、实时还原声音。
-- **核心库**（仓库根目录，`vatrix-core`）：分块排列、片头协议和音频变换，桌面端和浏览器端逐位一致。
+<br>
 
-这是可逆的扰乱，不是加密：知道参数的人都能还原。平台会重新编码和缩放上传的视频，整套设计围绕"转码之后仍能还原到可看"展开。
+<div align="center">
 
-## 下载
+  <a href="https://github.com/WJZ-P/Vatrix/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/WJZ-P/Vatrix.svg?style=flat-square" alt="Contributors" style="height: 30px">
+  </a>
+  &nbsp;
+  <a href="https://github.com/WJZ-P/Vatrix/network/members">
+    <img src="https://img.shields.io/github/forks/WJZ-P/Vatrix.svg?style=flat-square" alt="Forks" style="height: 30px">
+  </a>
+  &nbsp;
+  <a href="https://github.com/WJZ-P/Vatrix/stargazers">
+    <img src="https://img.shields.io/github/stars/WJZ-P/Vatrix.svg?style=flat-square" alt="Stargazers" style="height: 30px">
+  </a>
+  &nbsp;
+  <a href="https://github.com/WJZ-P/Vatrix/issues">
+    <img src="https://img.shields.io/github/issues/WJZ-P/Vatrix.svg?style=flat-square" alt="Issues" style="height: 30px">
+  </a>
+  &nbsp;
+  <a href="https://github.com/WJZ-P/Vatrix/releases">
+    <img src="https://img.shields.io/github/v/release/WJZ-P/Vatrix?style=flat-square" alt="Release" style="height: 30px">
+  </a>
 
-到 [Releases](https://github.com/WJZ-P/Vatrix/releases/latest) 下载：
+</div>
 
-- `vatrix.user.js`：油猴脚本，装好 Tampermonkey 后点开即可安装，之后自动更新；
-- `Vatrix-<版本>-windows-x64.zip`：Windows 免安装版，解压后双击 `Vatrix.exe`；
-- `Vatrix-<版本>-macos-arm64.dmg` / `-macos-x64.dmg`：macOS（Apple Silicon / Intel）。
+<br><br>
 
-这些都由 GitHub Actions 构建：推送 `v*` tag 后 [release.yml](.github/workflows/release.yml) 打包并发布，
-发布说明取自 `.github/release-notes/<tag>.md`。各处版本号（两个 Cargo.toml、`app/package.json`、`tauri.conf.json`、
-`userscript/package.json`）必须和 tag 一致，否则流水线第一步就会失败。
+<!-- PROJECT LOGO -->
 
-## 从源码运行
+<p align="center">
+  <a href="https://github.com/WJZ-P/Vatrix/">
+    <img src="assets/branding/vatrix-icon.png" alt="Logo" width="150" height="150" style="margin: 0; border-radius: 24px;">
+  </a>
+  <h1 align="center">Vatrix</h1>
+  <p align="center">
+    基于分块置换与频谱倒置的视频扰乱工具，附油猴脚本，可在哔哩哔哩和 YouTube 上还原。
+    <br><br>
+    <a href="https://github.com/WJZ-P/Vatrix/releases">下载</a>
+    ·
+    <a href="https://github.com/WJZ-P/Vatrix/issues">报告Bug</a>
+    ·
+    <a href="https://github.com/WJZ-P/Vatrix/issues">提出新特性</a>
+  </p>
+</p>
+
+<p align="center">
+  <a href="https://www.bilibili.com/video/BV1vx4y1t7rH">
+    <img src="markdown/深蓝雨.jpg" alt="深蓝雨">
+  </a>
+</p>
+<h2 align="center">"尽握在手沉重的花束名誉&nbsp;沾着泥土的指尖始终&nbsp;怯于靠近&nbsp;那脸庞遥不可及"</h2>
+
+## 目录
+
+- [Vatrix](#vatrix)
+    - [目录](#目录)
+    - [项目简介](#项目简介)
+    - [功能特性](#功能特性)
+    - [注意事项](#注意事项)
+    - [使用教程](#使用教程)
+    - [获取更新](#获取更新)
+    - [技术栈](#技术栈)
+    - [核心库](#核心库)
+
+## 项目简介
+
+Vatrix（混映）把视频画面切成小方块打乱后再上传。装了油猴脚本的观众能实时看到原画面、听到原声音，其他人只看到一片方块。片头一秒的二维码记下还原参数，观众不用手动填写。
+
+声音也可以一起扰乱：语音频段做频谱倒置，音高和音色都会挪走。这是可逆的扰乱，知道参数的人都能还原。平台会重新编码和缩放上传的视频，整套设计围绕「转码之后仍能还原到可看」展开。
+
+<p align="center">
+  <img src="markdown/before.png" alt="Before：打乱后的画面" width="88%">
+</p>
+<h3 align="center">Before</h3>
+
+<p align="center">
+  <img src="markdown/after.png" alt="After：还原后的画面" width="88%">
+</p>
+<h3 align="center">After</h3>
+
+<p align="center">
+  <img src="markdown/panel.png" alt="油猴插件面板" width="384">
+</p>
+<h3 align="center">插件面板</h3>
+
+## 功能特性
+
+- 🧩 **分块置换** — 画面按种子切块重排，块四周留保护边，转码和缩放的边缘损伤还原时丢掉
+- 🔊 **频谱倒置** — 164 Hz–10 kHz 沿频率轴镜像，听不出是谁在说话；再做一次就是还原
+- 📷 **片头二维码** — 打乱后的视频最前面加 1 秒二维码，脚本读到后自动填好参数
+- 🎬 **油猴实时还原** — 在哔哩哔哩和 YouTube 播放页用 WebGL2 叠回画面，声音也实时翻回来
+- 🌗 **可选反色** — 桌面端和脚本用同一开关，默认关闭
+
+## ⚠️ 注意事项
+
+- **这是可逆扰乱，不是加密。** 持有种子和参数的任何人都能还原
+- 桌面端支持 **Windows 与 macOS**；油猴脚本适配 **哔哩哔哩** 和 **YouTube**
+- 检测到 PQ/HLG 标记的 HDR 输入时，请先转成 SDR
+- 带片头二维码的视频会自动还原；二维码里没写 seed 时，在面板里补上
+
+## 使用教程
+
+### 1. 下载
+
+从 [Releases](https://github.com/WJZ-P/Vatrix/releases/latest) 下载最新版本：
+
+- `vatrix.user.js`：油猴脚本，装好 Tampermonkey 后点开即可安装，之后自动更新
+- `Vatrix-<版本>-windows-x64.zip`：Windows 免安装版，解压后双击 `Vatrix.exe`
+- `Vatrix-<版本>-macos-arm64.dmg` / `-macos-x64.dmg`：macOS（Apple Silicon / Intel）
+
+### 2. 打乱并上传
+
+1. 打开桌面端，把视频拖进去
+2. 确认 tile、margin、seed，需要的话打开反色和音频频谱翻转
+3. 导出 mp4，上传到哔哩哔哩或 YouTube
+
+片头二维码默认打开。没装脚本的人只能看到方块；装了脚本的人打开播放页就会自动还原。
+
+### 3. 安装油猴脚本
+
+1. 先安装 [Tampermonkey](https://www.tampermonkey.net/)
+2. 打开 Release 里的 `vatrix.user.js`，按提示安装
+3. 打开用 Vatrix 处理过的 B 站或 YouTube 视频。入口在 B 站点赞栏分享按钮右侧，YouTube 在点赞左侧
+
+手动参数、站点差异和限制见 [userscript/README.md](userscript/README.md)。桌面端的界面和参数见 [app/README.md](app/README.md)。
+
+### 4. 从源码运行
 
 ```text
 scripts/fetch-ffmpeg.ps1              # 下载 ffmpeg 到 tools/ffmpeg（桌面端以子进程调用）
 cd app && npm install && npm run tauri   # 开发模式启动桌面端
 ```
 
-浏览器端：在油猴里安装 `userscript/vatrix.user.js`，打开用桌面端加密并上传的 B 站或 YouTube 视频即可。
-各部分的细节见 [app/README.md](app/README.md) 和 [userscript/README.md](userscript/README.md)。
+浏览器端：在油猴里安装 `userscript/vatrix.user.js`。
+
+这些安装包由 GitHub Actions 构建：推送 `v*` tag 后 [release.yml](.github/workflows/release.yml) 打包并发布，
+发布说明取自 `.github/release-notes/<tag>.md`。各处版本号（两个 Cargo.toml、`app/package.json`、`tauri.conf.json`、
+`userscript/package.json`）必须和 tag 一致，否则流水线第一步就会失败。
+
+## 获取更新
+
+#### [前往 Release 页面](https://github.com/WJZ-P/Vatrix/releases)
+
+## 技术栈
+
+- **桌面端**: Tauri 2 + React + TypeScript + Linaria
+- **核心库**: Rust（`vatrix-core`，分块置换、片头协议、频谱倒置）
+- **浏览器脚本**: 油猴 + WebGL2，与核心库逐位一致
+- **编解码**: ffmpeg（子进程）
 
 ## 核心库
 
 视频画面分块重排的 Rust 核心库，配套 ffmpeg 流水线实验和浏览器端 WebGL2 还原器。
 
 目标场景：桌面端（Tauri）把视频打乱后上传视频网站，观众通过油猴脚本在浏览器里实时还原。
-平台会重新编码并缩放视频，所以本库的设计围绕"打乱后的画面经有损转码仍能还原到可看"展开。
+平台会重新编码并缩放视频，所以本库的设计围绕「打乱后的画面经有损转码仍能还原到可看」展开。
 
 ## 当前范围
 
@@ -185,6 +307,16 @@ bash scripts/experiment/tile_size.sh <视频.mp4>
 
 ## 桌面端
 
-`app/` 是 Tauri 2 + React + Linaria 的桌面端骨架，`app/src-tauri` 是根 workspace 的成员并依赖本 crate。
-拖入视频、调 tile / margin / seed、选输出目录，一键加密或解密；ffmpeg 以子进程方式接入，逐帧进度和前后快照都在界面里。
+`app/` 是 Tauri 2 + React + Linaria 的桌面端，`app/src-tauri` 是根 workspace 的成员并依赖本 crate。
+拖入视频、调 tile / margin / seed、选输出目录，一键打乱或还原；ffmpeg 以子进程方式接入，逐帧进度和前后快照都在界面里。
 见 [app/README.md](app/README.md)。
+
+## 如果您喜欢本项目，请给我点个⭐吧(๑>◡<๑)！
+
+## ⭐ Star 历史
+
+[![Stargazers over time](https://starchart.cc/WJZ-P/Vatrix.svg?variant=adaptive)](https://starchart.cc/WJZ-P/Vatrix)
+
+## 友情链接
+
+- [LINUX DO](https://linux.do/)
